@@ -1,0 +1,75 @@
+{
+  "Service Desk": {
+    "password": "service123",
+    "processes": {
+      "INDIA AND APAC": [
+        "Adithya K G", "Bandhavi V", "Chandru Rajendran", "Chandraprakash", "Dakshinamoorthy Selvaraj",
+        "Harish Kuruba", "J Mohan Kumar", "Navaneetha Krishnan", "Rakesh M", "Sandeep Kumar",
+        "Sathish Chandran", "Sheetham Sahoo", "Shilpa C", "Shripad L", "Sree Hari N", "Subhash K"
+      ],
+      "EMEA AND AMEC": [
+        "Arpitha K B", "Ashoka K", "Jebosh Raju", "Kanagavalli Dhamodharan", "Kotlapalli Nikhitha",
+        "Manohar Kirshna", "Ramya J", "Sayed Abbas", "Shaktivel K", "Vaishali Sahu",
+        "Venkata Sai Nagendra Batchu"
+      ]
+    },
+    "shifts": {
+      "APAC": "5AM to 2PM",
+      "Morning": "7AM to 4PM",
+      "General": "11AM to 8PM",
+      "Afternoon": "3PM to 12AM",
+      "Evening": "6PM to 3AM",
+      "Night": "8PM to 5AM",
+      "Weekend": "7AM to 4PM",
+      "PL": "Planned Leave",
+      "AL": "Adhoc Leave",
+      "Early": "1PM to 10PM",
+      "WO": "Weekly Off",
+      "Holiday": "Holiday",
+      "LWD": "Last Working Day"
+    },
+    "show_filters": true
+  },
+  "App Tools": {
+    "password": "apptools123",
+    "processes": {},
+    "shifts": {},
+    "show_filters": false
+  },
+  "App Development": {
+    "password": "appdev123",
+    "processes": {},
+    "shifts": {},
+    "show_filters": false
+  },
+  "Cloud Ops": {
+    "password": "cloudops123",
+    "processes": {},
+    "shifts": {},
+    "show_filters": false
+  },
+  "End User Ops": {
+    "password": "enduser123",
+    "processes": {},
+    "shifts": {},
+    "show_filters": false
+  },
+  "Messaging": {
+    "password": "messaging123",
+    "processes": {},
+    "shifts": {},
+    "show_filters": false
+  },
+  "Network Team": {
+    "password": "network123",
+    "processes": {},
+    "shifts": {},
+    "show_filters": false
+  },
+  "Threat Response Team": {
+    "password": "threat123",
+    "processes": {},
+    "shifts": {},
+    "show_filters": false
+  }
+}

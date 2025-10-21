@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expected Department Management Interface</title>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --primary-color: #6366f1;
+            --border-color: #e2e8f0;
+            --radius-md: 0.375rem;
+            --radius-lg: 0.5rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .notification {
+            background: #dcf5ff;
+            border: 2px solid #0ea5e9;
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .notification h2 {
+            color: #0369a1;
+            margin-bottom: 10px;
+        }
+
+        .settings-section {
+            background: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .settings-section h2 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+        }
+
+        .section-note {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .management-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1200px) {
+            .management-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .management-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .management-card {
+            background: var(--bg-tertiary);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            min-height: 400px;
+        }
+
+        .management-card.highlight {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            position: relative;
+        }
+
+        .management-card.highlight::before {
+            content: "NEW FEATURE ✨";
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            background: #f59e0b;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .management-card h3 {
+            margin: 0 0 1rem 0;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .form-select, .form-input {
+            width: 100%;
+            padding: 0.6rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .form-select:focus, .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-actions {
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            border: none;
+            padding: 0.7rem 1.2rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #d97706;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-success:hover {
+            background: #047857;
+        }
+
+        .btn-warning:hover {
+            background: #b45309;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+            align-items: start;
+        }
+
+        .before, .after {
+            padding: 20px;
+            border-radius: var(--radius-lg);
+        }
+
+        .before {
+            background: #fee2e2;
+            border: 2px solid #dc2626;
+        }
+
+        .after {
+            background: #dcfce7;
+            border: 2px solid #059669;
+        }
+
+        .step-list {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            margin: 20px 0;
+        }
+
+        .step-list h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .step-list ol {
+            padding-left: 20px;
+        }
+
+        .step-list li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="notification">
+        <h2>🎯 THIS IS WHAT YOUR INTERFACE SHOULD LOOK LIKE</h2>
+        <p>The edit features have been implemented. If you're not seeing them, follow the troubleshooting steps below.</p>
+    </div>
+
+    <div class="comparison">
+        <div class="before">
+            <h3>❌ Before (2 forms per section)</h3>
+            <ul>
+                <li>Only Add Employee and Remove Employee</li>
+                <li>Only Add Shift and Remove Shift</li>
+                <li>No way to edit existing data</li>
+            </ul>
+        </div>
+        <div class="after">
+            <h3>✅ After (3 forms per section)</h3>
+            <ul>
+                <li>Add Employee, <strong>Edit Employee</strong>, Remove Employee</li>
+                <li>Add Shift, <strong>Edit Shift</strong>, Remove Shift</li>
+                <li>Orange "Update" buttons for editing</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Employee Management -->
+    <div class="settings-section">
+        <h2>Employee Management</h2>
+        <p class="section-note">Add, edit, or remove employees and organize them by process/role.</p>
+        
+        <div class="management-grid">
+            <!-- Add Employee Form -->
+            <div class="management-card">
+                <h3>Add Employee</h3>
+                <div class="form-group">
+                    <label class="form-label">Process/Role:</label>
+                    <input type="text" class="form-input" placeholder="Enter process or role name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Employee Name:</label>
+                    <input type="text" class="form-input" placeholder="Enter employee name">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success">Add Employee</button>
+                </div>
+            </div>
+            
+            <!-- Edit Employee Form - NEW -->
+            <div class="management-card highlight">
+                <h3>Edit Employee</h3>
+                <div class="form-group">
+                    <label class="form-label">Current Process:</label>
+                    <select class="form-select">
+                        <option>Select current process</option>
+                        <option>Maintenance</option>
+                        <option>Operations</option>
+                        <option>Quality Control</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Current Employee:</label>
+                    <select class="form-select">
+                        <option>Select current employee</option>
+                        <option>John Smith</option>
+                        <option>Mary Johnson</option>
+                        <option>Bob Wilson</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Process/Role:</label>
+                    <input type="text" class="form-input" placeholder="Enter new process or role name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Employee Name:</label>
+                    <input type="text" class="form-input" placeholder="Enter new employee name">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-warning">Update Employee</button>
+                </div>
+            </div>
+            
+            <!-- Remove Employee Form -->
+            <div class="management-card">
+                <h3>Remove Employee</h3>
+                <div class="form-group">
+                    <label class="form-label">Process/Role:</label>
+                    <select class="form-select">
+                        <option>Select a process</option>
+                        <option>Maintenance</option>
+                        <option>Operations</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Employee Name:</label>
+                    <select class="form-select">
+                        <option>Select an employee</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-danger">Remove Employee</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Shift Management -->
+    <div class="settings-section">
+        <h2>Shift Management</h2>
+        <p class="section-note">Configure available shifts for your department.</p>
+        
+        <div class="management-grid">
+            <!-- Add Shift Form -->
+            <div class="management-card">
+                <h3>Add Shift</h3>
+                <div class="form-group">
+                    <label class="form-label">Shift Code:</label>
+                    <input type="text" class="form-input" placeholder="e.g., D, N, E">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Shift Description:</label>
+                    <input type="text" class="form-input" placeholder="e.g., Day (6AM-2PM)">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-success">Add Shift</button>
+                </div>
+            </div>
+            
+            <!-- Edit Shift Form - NEW -->
+            <div class="management-card highlight">
+                <h3>Edit Shift</h3>
+                <div class="form-group">
+                    <label class="form-label">Current Shift:</label>
+                    <select class="form-select">
+                        <option>Select current shift</option>
+                        <option>D: Day (6AM-2PM)</option>
+                        <option>N: Night (10PM-6AM)</option>
+                        <option>E: Evening (2PM-10PM)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Shift Code:</label>
+                    <input type="text" class="form-input" placeholder="e.g., D, N, E">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Shift Description:</label>
+                    <input type="text" class="form-input" placeholder="e.g., Day (6AM-2PM)">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-warning">Update Shift</button>
+                </div>
+            </div>
+            
+            <!-- Remove Shift Form -->
+            <div class="management-card">
+                <h3>Remove Shift</h3>
+                <div class="form-group">
+                    <label class="form-label">Shift to Remove:</label>
+                    <select class="form-select">
+                        <option>Select a shift</option>
+                        <option>D: Day (6AM-2PM)</option>
+                        <option>N: Night (10PM-6AM)</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-danger">Remove Shift</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="step-list">
+        <h3>🔧 TROUBLESHOOTING STEPS</h3>
+        <p>If you don't see the edit features in your Flask app, try these steps IN ORDER:</p>
+        <ol>
+            <li><strong>Double-click on `restart_server.bat`</strong> to restart your Flask server</li>
+            <li><strong>Go to:</strong> <code>http://localhost:5000/test-edit-features</code> to run diagnostics</li>
+            <li><strong>Check that all items show "YES"</strong> in the diagnostic page</li>
+            <li><strong>Go to:</strong> <code>http://localhost:5000/local-login</code></li>
+            <li><strong>Login with:</strong> 
+                <ul>
+                    <li>Engineering: <code>eng123</code></li>
+                    <li>Production: <code>prod456</code></li>
+                    <li>Administration: <code>admin789</code></li>
+                </ul>
+            </li>
+            <li><strong>Navigate to:</strong> <code>http://localhost:5000/department-settings</code></li>
+            <li><strong>MAXIMIZE your browser window</strong> to see the 3-column layout</li>
+            <li><strong>Press Ctrl+F5</strong> to force refresh and clear cache</li>
+            <li><strong>Look for:</strong> 
+                <ul>
+                    <li>Orange "Update Employee" button in the middle column</li>
+                    <li>Orange "Update Shift" button in the middle column</li>
+                    <li>Three forms per section instead of two</li>
+                </ul>
+            </li>
+        </ol>
+        
+        <h4 style="margin-top: 20px; color: #dc2626;">🚨 If Still Not Working:</h4>
+        <ul style="margin-top: 10px;">
+            <li>Check browser console (F12) for JavaScript errors</li>
+            <li>Try a different browser (Chrome/Firefox/Edge)</li>
+            <li>Try incognito/private browsing mode</li>
+            <li>Check if your browser is zoomed out too far</li>
+        </ul>
+        
+        <p style="margin-top: 20px; padding: 15px; background: #dbeafe; border-radius: 8px; border-left: 4px solid #3b82f6;">
+            💡 <strong>The features ARE implemented in your code.</strong> This is most likely a browser caching or server restart issue.
+        </p>
+    </div>
+</body>
+</html>

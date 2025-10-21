@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Management - Preview</title>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --border-color: #e2e8f0;
+            --radius-sm: 0.25rem;
+            --radius-md: 0.375rem;
+            --radius-lg: 0.5rem;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .card-header {
+            background: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .note {
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .settings-section {
+            background: var(--bg-secondary);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+        }
+
+        .settings-section h2 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-primary);
+        }
+
+        .section-note {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .management-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1200px) {
+            .management-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .management-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .management-card {
+            background: var(--bg-tertiary);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .management-card h3 {
+            margin: 0 0 1rem 0;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-select, .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            box-sizing: border-box;
+        }
+
+        .form-select:focus, .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.1);
+        }
+
+        .form-actions {
+            margin-top: 1rem;
+        }
+
+        .btn-success, .btn-warning, .btn-danger {
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #d97706;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #047857;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning:hover {
+            background: #b45309;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+        }
+
+        .highlight {
+            background: #fef3c7;
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            margin: 1rem 0;
+            border: 2px solid #f59e0b;
+        }
+
+        .demo-note {
+            background: #dbeafe;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin: 2rem 0;
+            border-left: 4px solid var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-note">
+        <h3>🎯 DEPARTMENT MANAGEMENT PREVIEW</h3>
+        <p>This is what your department management interface should look like with the new edit features.</p>
+        <p><strong>New Features:</strong> Edit Employee (orange button) and Edit Shift (orange button) forms</p>
+    </div>
+
+    <div class="card-header">
+        <h1>Department Settings</h1>
+        <p class="note">Manage department-specific settings, employees, and shifts.</p>
+    </div>
+
+    <!-- Employee Management -->
+    <div class="settings-section">
+        <h2>Employee Management</h2>
+        <p class="section-note">Add, edit, or remove employees and organize them by process/role.</p>
+        
+        <div class="management-grid">
+            <!-- Add Employee Form -->
+            <div class="management-card">
+                <h3>Add Employee</h3>
+                <form class="settings-form">
+                    <div class="form-group">
+                        <label class="form-label">Process/Role:</label>
+                        <input type="text" class="form-input" placeholder="Enter process or role name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Employee Name:</label>
+                        <input type="text" class="form-input" placeholder="Enter employee name">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-success">Add Employee</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Edit Employee Form -->
+            <div class="management-card highlight">
+                <h3>Edit Employee ✨ NEW</h3>
+                <form class="settings-form">
+                    <div class="form-group">
+                        <label class="form-label">Current Process:</label>
+                        <select class="form-select">
+                            <option>Maintenance</option>
+                            <option>Operations</option>
+                            <option>Quality Control</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Current Employee:</label>
+                        <select class="form-select">
+                            <option>John Smith</option>
+                            <option>Mary Johnson</option>
+                            <option>Bob Wilson</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Process/Role:</label>
+                        <input type="text" class="form-input" placeholder="Enter new process or role name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Employee Name:</label>
+                        <input type="text" class="form-input" placeholder="Enter new employee name">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-warning">Update Employee</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Remove Employee Form -->
+            <div class="management-card">
+                <h3>Remove Employee</h3>
+                <form class="settings-form">
+                    <div class="form-group">
+                        <label class="form-label">Process/Role:</label>
+                        <select class="form-select">
+                            <option value="">Select a process</option>
+                            <option>Maintenance</option>
+                            <option>Operations</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Employee Name:</label>
+                        <select class="form-select">
+                            <option value="">Select an employee</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-danger">Remove Employee</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Shift Management -->
+    <div class="settings-section">
+        <h2>Shift Management</h2>
+        <p class="section-note">Configure available shifts for your department.</p>
+        
+        <div class="management-grid">
+            <!-- Add Shift Form -->
+            <div class="management-card">
+                <h3>Add Shift</h3>
+                <form class="settings-form">
+                    <div class="form-group">
+                        <label class="form-label">Shift Code:</label>
+                        <input type="text" class="form-input" placeholder="e.g., D, N, E">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Shift Description:</label>
+                        <input type="text" class="form-input" placeholder="e.g., Day (6AM-2PM)">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-success">Add Shift</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Edit Shift Form -->
+            <div class="management-card highlight">
+                <h3>Edit Shift ✨ NEW</h3>
+                <form class="settings-form">
+                    <div class="form-group">
+                        <label class="form-label">Current Shift:</label>
+                        <select class="form-select">
+                            <option>D: Day (6AM-2PM)</option>
+                            <option>N: Night (10PM-6AM)</option>
+                            <option>E: Evening (2PM-10PM)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Shift Code:</label>
+                        <input type="text" class="form-input" placeholder="e.g., D, N, E">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Shift Description:</label>
+                        <input type="text" class="form-input" placeholder="e.g., Day (6AM-2PM)">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-warning">Update Shift</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Remove Shift Form -->
+            <div class="management-card">
+                <h3>Remove Shift</h3>
+                <form class="settings-form">
+                    <div class="form-group">
+                        <label class="form-label">Shift to Remove:</label>
+                        <select class="form-select">
+                            <option value="">Select a shift</option>
+                            <option>D: Day (6AM-2PM)</option>
+                            <option>N: Night (10PM-6AM)</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-danger">Remove Shift</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-note">
+        <h3>📋 How to See These Features</h3>
+        <ol>
+            <li><strong>Restart Flask Server:</strong> Stop current server (Ctrl+C) and restart with <code>python app.py</code></li>
+            <li><strong>Clear Browser Cache:</strong> Press Ctrl+F5 for hard refresh</li>
+            <li><strong>Login:</strong> Use admin credentials or department passwords</li>
+            <li><strong>Navigate:</strong> Go to Department Settings in the app</li>
+            <li><strong>Check Screen Size:</strong> Maximize browser window to see 3-column layout</li>
+        </ol>
+        <p><strong>Key Visual Changes:</strong></p>
+        <ul>
+            <li>✨ <strong>Edit Employee</strong> form (middle column) with orange "Update Employee" button</li>
+            <li>✨ <strong>Edit Shift</strong> form (middle column) with orange "Update Shift" button</li>
+            <li>🎨 Three-column grid layout on wide screens</li>
+            <li>🎨 Dynamic dropdowns for selecting existing data</li>
+        </ul>
+    </div>
+</body>
+</html>

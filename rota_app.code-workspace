@@ -1,0 +1,61 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"python.defaultInterpreterPath": "python",
+		"python.terminal.activateEnvironment": true,
+		"files.associations": {
+			"*.html": "html",
+			"*.json": "json",
+			"*.md": "markdown"
+		},
+		"emmet.includeLanguages": {
+			"jinja-html": "html"
+		},
+		"files.exclude": {
+			"__pycache__": true,
+			"*.pyc": true,
+			".pytest_cache": true
+		},
+		"python.linting.enabled": true,
+		"python.linting.pylintEnabled": false,
+		"python.linting.flake8Enabled": true,
+		"python.formatting.provider": "black",
+		"editor.formatOnSave": true,
+		"editor.tabSize": 4,
+		"editor.insertSpaces": true,
+		"html.format.indentInnerHtml": true,
+		"html.format.wrapLineLength": 100
+	},
+	"extensions": {
+		"recommendations": [
+			"ms-python.python",
+			"ms-python.flake8",
+			"ms-python.black-formatter",
+			"wholroyd.jinja",
+			"bradlc.vscode-tailwindcss",
+			"formulahendry.auto-rename-tag",
+			"ms-vscode.vscode-json"
+		]
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "Flask App",
+				"type": "python",
+				"request": "launch",
+				"program": "${workspaceFolder}/app.py",
+				"console": "integratedTerminal",
+				"env": {
+					"FLASK_ENV": "development",
+					"FLASK_DEBUG": "1"
+				},
+				"jinja": true
+			}
+		]
+	}
+}
