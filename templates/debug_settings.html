@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card-header">
+  <h1>🔍 DEBUG: Department Settings Data</h1>
+  <p class="note">This page shows what data is being passed to the template.</p>
+</div>
+<div class="card-body">
+  
+  <div style="background: #f0f0f0; padding: 20px; margin: 20px 0; border-radius: 8px;">
+    <h3>🔐 User Information</h3>
+    <p><strong>User Department:</strong> {{ user_department or 'None' }}</p>
+    <p><strong>Is Admin:</strong> {{ is_admin }}</p>
+    <p><strong>Available Departments:</strong> {{ available_departments | join(', ') if available_departments else 'None' }}</p>
+    <p><strong>Can Edit:</strong> {{ can_edit() }}</p>
+  </div>
+
+  <div style="background: #e0f0ff; padding: 20px; margin: 20px 0; border-radius: 8px;">
+    <h3>📊 Departments Data</h3>
+    <p><strong>Departments Variable Type:</strong> {{ departments.__class__.__name__ if departments else 'None' }}</p>
+    <p><strong>Number of Departments:</strong> {{ departments.keys() | list | length if departments else 0 }}</p>
+    
+    {% if departments %}
+      {% for dept_name, dept_data in departments.items() %}
+        <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 5px;">
+          <h4>🏢 {{ dept_name }}</h4>
+          <p><strong>Has Processes:</strong> {{ 'Yes' if dept_data.processes else 'No' }}</p>
+          <p><strong>Has Shifts:</strong> {{ 'Yes' if dept_data.shifts else 'No' }}</p>
+          
+          {% if dept_data.processes %}
+            <p><strong>Processes:</strong> {{ dept_data.processes.keys() | list | join(', ') }}</p>
+          {% endif %}
+          
+          {% if dept_data.shifts %}
+            <p><strong>Shifts:</strong> {{ dept_data.shifts.keys() | list | join(', ') }}</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <p style="color: red;">⚠️ No departments data found!</p>
+    {% endif %}
+  </div>
+
+  <div style="background: #fff0e0; padding: 20px; margin: 20px 0; border-radius: 8px;">
+    <h3>🧪 Template Test</h3>
+    <p>If you see this section, the template is rendering properly.</p>
+    
+    <!-- Test the template logic that might be causing issues -->
+    <p><strong>Template Logic Tests:</strong></p>
+    <ul>
+      <li>available_departments exists: {{ available_departments is defined }}</li>
+      <li>departments exists: {{ departments is defined }}</li>
+      <li>user_department exists: {{ user_department is defined }}</li>
+      <li>is_admin exists: {{ is_admin is defined }}</li>
+    </ul>
+  </div>
+
+  <div style="background: #e0ffe0; padding: 20px; margin: 20px 0; border-radius: 8px;">
+    <h3>🔗 Navigation</h3>
+    <p><a href="/department-settings">← Back to Department Settings</a></p>
+    <p><a href="/test-edit-features">→ Go to Edit Features Test</a></p>
+  </div>
+
+</div>
+
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  .card-header { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+  .card-body { background: white; padding: 20px; }
+  h1 { color: #333; }
+  h3 { color: #666; margin-top: 0; }
+  h4 { color: #333; margin: 5px 0; }
+</style>
+{% endblock %}

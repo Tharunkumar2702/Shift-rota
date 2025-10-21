@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card-header">
+  <h1>Minimal Department Settings Test</h1>
+</div>
+<div class="card-body">
+  
+  <!-- Test 1: Basic HTML -->
+  <h2>✅ Test 1: Basic HTML Works</h2>
+  <p>If you can see this text, basic HTML rendering is working.</p>
+  
+  <!-- Test 2: Template Variables -->
+  <h2>✅ Test 2: Template Variables</h2>
+  <p>User Department: {{ user_department or 'None' }}</p>
+  <p>Is Admin: {{ is_admin }}</p>
+  
+  <!-- Test 3: Simple Form -->
+  <h2>✅ Test 3: Simple Form</h2>
+  <form method="post">
+    <input type="hidden" name="action" value="test">
+    <label>Test Input:</label>
+    <input type="text" name="test_input" placeholder="Enter something">
+    <button type="submit">Test Button</button>
+  </form>
+  
+  <!-- Test 4: Employee Management Section -->
+  <h2>✅ Test 4: Employee Management Section</h2>
+  <div style="background: #f0f8ff; padding: 20px; margin: 10px 0; border: 2px solid #0066cc; border-radius: 8px;">
+    <h3>Employee Management</h3>
+    <p>This should appear as a light blue box.</p>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 20px 0;">
+      
+      <!-- Add Employee -->
+      <div style="background: #e8f5e8; padding: 15px; border: 1px solid #4CAF50; border-radius: 5px;">
+        <h4>Add Employee</h4>
+        <form method="post" style="margin: 10px 0;">
+          <input type="hidden" name="action" value="add_employee">
+          <div style="margin: 10px 0;">
+            <label>Process:</label><br>
+            <input type="text" name="process" placeholder="Enter process name" style="width: 100%; padding: 5px;">
+          </div>
+          <div style="margin: 10px 0;">
+            <label>Employee:</label><br>
+            <input type="text" name="employee_name" placeholder="Enter employee name" style="width: 100%; padding: 5px;">
+          </div>
+          <button type="submit" style="background: #4CAF50; color: white; padding: 8px 16px; border: none; border-radius: 4px;">Add Employee</button>
+        </form>
+      </div>
+      
+      <!-- Edit Employee -->
+      <div style="background: #fff3cd; padding: 15px; border: 2px solid #ff9800; border-radius: 5px;">
+        <h4>✨ Edit Employee (NEW)</h4>
+        <form method="post" style="margin: 10px 0;">
+          <input type="hidden" name="action" value="edit_employee">
+          <div style="margin: 10px 0;">
+            <label>Current Process:</label><br>
+            <select name="old_process" style="width: 100%; padding: 5px;">
+              <option value="">Select process</option>
+              {% if departments and user_department and user_department in departments %}
+                {% if departments[user_department].processes %}
+                  {% for process in departments[user_department].processes.keys() %}
+                    <option value="{{ process }}">{{ process }}</option>
+                  {% endfor %}
+                {% endif %}
+              {% endif %}
+            </select>
+          </div>
+          <div style="margin: 10px 0;">
+            <label>Current Employee:</label><br>
+            <select name="old_employee" style="width: 100%; padding: 5px;">
+              <option value="">Select employee</option>
+            </select>
+          </div>
+          <div style="margin: 10px 0;">
+            <label>New Process:</label><br>
+            <input type="text" name="new_process" placeholder="Enter new process" style="width: 100%; padding: 5px;">
+          </div>
+          <div style="margin: 10px 0;">
+            <label>New Employee:</label><br>
+            <input type="text" name="new_employee" placeholder="Enter new name" style="width: 100%; padding: 5px;">
+          </div>
+          <button type="submit" style="background: #ff9800; color: white; padding: 8px 16px; border: none; border-radius: 4px;">Update Employee</button>
+        </form>
+      </div>
+      
+      <!-- Remove Employee -->
+      <div style="background: #ffe6e6; padding: 15px; border: 1px solid #f44336; border-radius: 5px;">
+        <h4>Remove Employee</h4>
+        <form method="post" style="margin: 10px 0;">
+          <input type="hidden" name="action" value="remove_employee">
+          <div style="margin: 10px 0;">
+            <label>Process:</label><br>
+            <select name="process" style="width: 100%; padding: 5px;">
+              <option value="">Select process</option>
+            </select>
+          </div>
+          <div style="margin: 10px 0;">
+            <label>Employee:</label><br>
+            <select name="employee_name" style="width: 100%; padding: 5px;">
+              <option value="">Select employee</option>
+            </select>
+          </div>
+          <button type="submit" style="background: #f44336; color: white; padding: 8px 16px; border: none; border-radius: 4px;">Remove Employee</button>
+        </form>
+      </div>
+      
+    </div>
+  </div>
+  
+  <!-- Test 5: Navigation -->
+  <h2>✅ Test 5: Navigation</h2>
+  <p><a href="/department-settings">← Back to Full Department Settings</a></p>
+  <p><a href="/debug-settings">→ Debug Department Data</a></p>
+  
+  <!-- Test 6: Current Data Display -->
+  <h2>✅ Test 6: Current Data</h2>
+  {% if departments and user_department and user_department in departments %}
+    <div style="background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 5px;">
+      <h4>{{ user_department }} Data:</h4>
+      {% if departments[user_department].processes %}
+        <p><strong>Processes:</strong> {{ departments[user_department].processes.keys() | list | join(', ') }}</p>
+      {% else %}
+        <p>No processes found</p>
+      {% endif %}
+      
+      {% if departments[user_department].shifts %}
+        <p><strong>Shifts:</strong> {{ departments[user_department].shifts.keys() | list | join(', ') }}</p>
+      {% else %}
+        <p>No shifts found</p>
+      {% endif %}
+    </div>
+  {% else %}
+    <p style="color: red;">❌ No department data available</p>
+  {% endif %}
+
+</div>
+
+<style>
+  body { font-family: Arial, sans-serif; line-height: 1.6; }
+  .card-header { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #dee2e6; }
+  .card-body { padding: 20px; }
+  h2 { color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 5px; }
+  h3 { color: #007bff; }
+  h4 { margin-top: 0; }
+  form { margin: 0; }
+  label { font-weight: bold; }
+  input, select { box-sizing: border-box; }
+</style>
+{% endblock %}

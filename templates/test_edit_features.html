@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Edit Features - {{ timestamp }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 2px solid #007bff;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-warning {
+            background: #ff8c00;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .highlight {
+            background: #fff3cd !important;
+            border: 2px solid #ffc107 !important;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 EDIT FEATURES TEST PAGE</h1>
+    <p class="timestamp">Generated at: {{ timestamp }}</p>
+    <p><strong>URL:</strong> <a href="/test-edit-features">/test-edit-features</a></p>
+    
+    <div class="test-section">
+        <h2>✅ Template Status Check</h2>
+        <p>✓ Edit Employee form exists in template: {{ 'YES' if edit_employee_exists else 'NO' }}</p>
+        <p>✓ Edit Shift form exists in template: {{ 'YES' if edit_shift_exists else 'NO' }}</p>
+        <p>✓ Warning button CSS exists: {{ 'YES' if warning_css_exists else 'NO' }}</p>
+        <p>✓ Backend routes exist: {{ 'YES' if backend_routes_exist else 'NO' }}</p>
+        <p>✓ Configuration file exists: {{ 'YES' if config_exists else 'NO' }}</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎯 What You Should See in Department Settings</h2>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>Add Employee</h3>
+                <input type="text" placeholder="Process/Role">
+                <input type="text" placeholder="Employee Name">
+                <button class="btn btn-success">Add Employee</button>
+            </div>
+            
+            <div class="card highlight">
+                <h3>Edit Employee ⭐ NEW</h3>
+                <select>
+                    <option>Select current process</option>
+                    <option>Maintenance</option>
+                    <option>Operations</option>
+                </select>
+                <select>
+                    <option>Select current employee</option>
+                    <option>John Smith</option>
+                    <option>Mary Johnson</option>
+                </select>
+                <input type="text" placeholder="Enter new process name">
+                <input type="text" placeholder="Enter new employee name">
+                <button class="btn btn-warning">Update Employee</button>
+            </div>
+            
+            <div class="card">
+                <h3>Remove Employee</h3>
+                <select>
+                    <option>Select a process</option>
+                </select>
+                <select>
+                    <option>Select an employee</option>
+                </select>
+                <button class="btn btn-danger">Remove Employee</button>
+            </div>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>Add Shift</h3>
+                <input type="text" placeholder="Shift Code">
+                <input type="text" placeholder="Shift Description">
+                <button class="btn btn-success">Add Shift</button>
+            </div>
+            
+            <div class="card highlight">
+                <h3>Edit Shift ⭐ NEW</h3>
+                <select>
+                    <option>Select current shift</option>
+                    <option>D: Day (6AM-2PM)</option>
+                    <option>N: Night (10PM-6AM)</option>
+                </select>
+                <input type="text" placeholder="New shift code">
+                <input type="text" placeholder="New shift description">
+                <button class="btn btn-warning">Update Shift</button>
+            </div>
+            
+            <div class="card">
+                <h3>Remove Shift</h3>
+                <select>
+                    <option>Select a shift</option>
+                </select>
+                <button class="btn btn-danger">Remove Shift</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 Debugging Information</h2>
+        <p><strong>Current User Department:</strong> {{ user_department or 'None' }}</p>
+        <p><strong>Is Admin:</strong> {{ is_admin or 'False' }}</p>
+        <p><strong>Available Departments:</strong> {{ available_departments | join(', ') if available_departments else 'None' }}</p>
+        <p><strong>Departments with Data:</strong> {{ departments.keys() | list | join(', ') if departments else 'None' }}</p>
+        
+        {% if departments %}
+        <h4>Department Data Preview:</h4>
+        {% for dept_name, dept_data in departments.items() %}
+            <p><strong>{{ dept_name }}:</strong></p>
+            <ul>
+                <li>Processes: {{ dept_data.processes.keys() | list | join(', ') if dept_data.processes else 'None' }}</li>
+                <li>Shifts: {{ dept_data.shifts.keys() | list | join(', ') if dept_data.shifts else 'None' }}</li>
+            </ul>
+        {% endfor %}
+        {% endif %}
+    </div>
+    
+    <div class="test-section">
+        <h2>🚀 Next Steps</h2>
+        <ol>
+            <li><strong>If you see this page:</strong> The Flask server is running and serving templates correctly</li>
+            <li><strong>Compare with Department Settings:</strong> Go to <a href="/department-settings">/department-settings</a> and compare</li>
+            <li><strong>Check browser width:</strong> Maximize browser window to see 3-column layout</li>
+            <li><strong>Hard refresh:</strong> Press Ctrl+F5 on the department settings page</li>
+            <li><strong>Check CSS loading:</strong> Use browser dev tools (F12) to check for CSS errors</li>
+        </ol>
+    </div>
+    
+    <p><a href="/department-settings">← Go to Department Settings</a></p>
+</body>
+</html>

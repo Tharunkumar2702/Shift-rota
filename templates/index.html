@@ -1,0 +1,783 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card-header">
+    <h1>Department Selector</h1>
+    <p class="note">Choose a department to view or edit the shift rota. You can adjust the month and year in the next step.</p>
+  </div>
+  <div class="card-body">
+    <div class="department-grid">
+      {% for d in departments %}
+        <button type="button" class="department-card" onclick="showDepartmentModal('{{ d }}')">
+          <div class="card-title">{{ d }}</div>
+          <div class="card-subtitle">View & Edit Rota</div>
+        </button>
+      {% endfor %}
+    </div>
+    
+    <!-- Department Access Modal -->
+    <div id="departmentModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modalDepartmentName">Department Access</h2>
+          <span class="close" onclick="closeDepartmentModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+          <p>How would you like to access this department?</p>
+          <div class="access-options">
+            <button class="access-btn read-only" onclick="accessDepartment('readonly')">
+              <div class="access-title">👥 Employee Login</div>
+              <div class="access-subtitle">View rota without editing permissions</div>
+            </button>
+            <button class="access-btn login" onclick="showLoginForm()">
+              <div class="access-title">🔑 Admin Login</div>
+              <div class="access-subtitle">Enter password to modify shifts</div>
+            </button>
+          </div>
+          
+          <!-- Login Form -->
+          <div id="loginForm" class="login-form" style="display: none;">
+            <form onsubmit="loginToDepartment(event)">
+              <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="hideLoginForm()">Cancel</button>
+                <button type="submit" class="btn-login">Login</button>
+              </div>
+            </form>
+            <div id="loginError" class="error-message" style="display: none;"></div>
+            
+            <!-- Forgot Password Link -->
+            <div class="forgot-password-link">
+              <a href="javascript:showForgotPassword()" class="forgot-link">🔓 Forgot Password?</a>
+            </div>
+          </div>
+          
+          <!-- Forgot Password Information -->
+          <div id="forgotPasswordInfo" class="forgot-info" style="display: none;">
+            <h3>🔓 Password Recovery</h3>
+            
+            <div class="recovery-options">
+              <div class="recovery-option sms-otp-option">
+                <div class="option-icon">📱</div>
+                <div class="option-content">
+                  <h4>SMS OTP Password Reset</h4>
+                  <p>Receive a secure OTP code via SMS and reset your password instantly</p>
+                  <button class="btn-sms-otp" onclick="sendSmsOtp()">Send OTP via SMS</button>
+                </div>
+              </div>
+              
+              <div class="recovery-option email-reset">
+                <div class="option-icon">📧</div>
+                <div class="option-content">
+                  <h4>Email Password Reset</h4>
+                  <p>Send a secure reset link to department administrators</p>
+                  <button class="btn-email-reset" onclick="sendEmailReset()">Send Reset Email</button>
+                </div>
+              </div>
+              
+              <div class="recovery-option">
+                <div class="option-icon">📞</div>
+                <div class="option-content">
+                  <h4>Contact System Administrator</h4>
+                  <p>Email: <strong>admin@yourcompany.com</strong><br>
+                     Phone: <strong>+1-XXX-XXX-XXXX</strong></p>
+                </div>
+              </div>
+              
+              <div class="recovery-option">
+                <div class="option-icon">💡</div>
+                <div class="option-content">
+                  <h4>Common Password Patterns</h4>
+                  <p>• Department name + "123" (e.g., service123)<br>
+                     • Department abbreviation + "123" (e.g., toc123)<br>
+                     • Check with your team lead or manager</p>
+                </div>
+              </div>
+              
+              <div class="recovery-option">
+                <div class="option-icon">🛠️</div>
+                <div class="option-content">
+                  <h4>Team Resources</h4>
+                  <p>• Check shared team documentation<br>
+                     • Ask a colleague in your department<br>
+                     • Look for password in team chat/wiki</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="forgot-actions">
+              <button type="button" class="btn-back" onclick="hideForgotPasswordInfo()">← Back to Login</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-section">
+      <div class="info-card">
+        <h3>📅 Current Period</h3>
+        <p>Viewing rotas for <strong>{{ default_month }}/{{ default_year }}</strong></p>
+      </div>
+      <div class="info-card">
+        <h3>ℹ️ How it Works</h3>
+        <ul>
+          <li>Select a department to view its shift rota</li>
+          <li>Rotas are organized by complete weekly cycles (Mon-Sun)</li>
+          <li>Edit mode allows you to modify shift assignments</li>
+          <li>Export functionality available for all departments</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <style>
+    /* Department Grid - Uniform Size */
+    .department-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, 280px);
+      gap: 1.5rem;
+      justify-content: center;
+      margin-bottom: 3rem;
+    }
+    
+    .department-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      color: var(--text-primary);
+      font-weight: 500;
+      box-shadow: var(--shadow-sm);
+      height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      width: 280px;
+    }
+    
+    .department-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--text-light);
+      background: var(--bg-secondary);
+    }
+    
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+    
+    .card-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 400;
+    }
+    
+    .info-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    
+    .info-card {
+      background: linear-gradient(135deg, #f8faff, var(--bg-secondary));
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      border: 1px solid var(--border-light);
+    }
+    
+    .info-card h3 {
+      margin: 0 0 1rem 0;
+      color: var(--text-primary);
+      font-size: 1.1rem;
+    }
+    
+    .info-card ul {
+      margin: 0;
+      padding-left: 1.2rem;
+    }
+    
+    .info-card li {
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      line-height: 1.5;
+    }
+    
+    @media (max-width: 768px) {
+      .department-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      .info-section {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .department-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      .department-card {
+        width: 100%;
+      }
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal-content {
+      background-color: var(--bg-primary);
+      margin: 10% auto;
+      padding: 0;
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      animation: modalSlideIn 0.3s ease;
+    }
+    
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .modal-header {
+      background: linear-gradient(135deg, var(--primary-color), #4f46e5);
+      color: white;
+      padding: 1.5rem;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.3rem;
+    }
+    
+    .close {
+      color: white;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s ease;
+    }
+    
+    .close:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .modal-body {
+      padding: 2rem;
+    }
+    
+    .modal-body p {
+      margin-bottom: 1.5rem;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+    
+    .access-options {
+      display: grid;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .access-btn {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    
+    .access-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-color);
+    }
+    
+    .access-btn.read-only:hover {
+      background: #f0f9ff;
+    }
+    
+    .access-btn.login:hover {
+      background: linear-gradient(135deg, #f8faff, var(--bg-secondary));
+    }
+    
+    .access-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+    
+    .access-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+    
+    .login-form {
+      background: var(--bg-secondary);
+      padding: 1.5rem;
+      border-radius: var(--radius-md);
+      margin-top: 1rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      transition: border-color 0.2s ease;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.1);
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+    }
+    
+    .btn-cancel, .btn-login {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-cancel {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+    
+    .btn-cancel:hover {
+      background: var(--border-color);
+    }
+    
+    .btn-login {
+      background: var(--primary-color);
+      color: white;
+    }
+    
+    .btn-login:hover {
+      background: #4f46e5;
+      transform: translateY(-1px);
+    }
+    
+    .error-message {
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 0.75rem;
+      border-radius: var(--radius-md);
+      margin-top: 1rem;
+      text-align: center;
+    }
+    
+    .forgot-password-link {
+      text-align: center;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .forgot-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .forgot-link:hover {
+      color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+    
+    .forgot-info {
+      background: var(--bg-secondary);
+      padding: 1.5rem;
+      border-radius: var(--radius-md);
+      margin-top: 1rem;
+    }
+    
+    .forgot-info h3 {
+      margin: 0 0 1.5rem 0;
+      color: var(--text-primary);
+      text-align: center;
+      font-size: 1.2rem;
+    }
+    
+    .recovery-options {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .recovery-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: var(--bg-primary);
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+    
+    .option-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    
+    .option-content {
+      flex: 1;
+    }
+    
+    .option-content h4 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-primary);
+      font-size: 1rem;
+    }
+    
+    .option-content p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    
+    .sms-otp-option {
+      border: 2px solid #10b981;
+      background: linear-gradient(135deg, #ecfdf5 0%, var(--bg-primary) 100%);
+    }
+    
+    .btn-sms-otp {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-top: 0.5rem;
+    }
+    
+    .btn-sms-otp:hover {
+      background: #059669;
+      transform: translateY(-1px);
+    }
+    
+    .email-reset {
+      border: 2px solid #3b82f6;
+      background: linear-gradient(135deg, #eff6ff 0%, var(--bg-primary) 100%);
+    }
+    
+    .btn-email-reset {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-top: 0.5rem;
+    }
+    
+    .btn-email-reset:hover {
+      background: #4f46e5;
+      transform: translateY(-1px);
+    }
+    
+    .forgot-actions {
+      text-align: center;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .btn-back {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+    
+    .btn-back:hover {
+      background: var(--border-color);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+    }
+  </style>
+  
+  <script>
+    let selectedDepartment = null;
+    
+    function showDepartmentModal(departmentName) {
+      selectedDepartment = departmentName;
+      document.getElementById('modalDepartmentName').textContent = `Access ${departmentName}`;
+      document.getElementById('departmentModal').style.display = 'block';
+      
+      // Reset form state
+      hideLoginForm();
+      document.getElementById('loginError').style.display = 'none';
+      document.getElementById('forgotPasswordInfo').style.display = 'none';
+    }
+    
+    function closeDepartmentModal() {
+      document.getElementById('departmentModal').style.display = 'none';
+      selectedDepartment = null;
+    }
+    
+    function showLoginForm() {
+      document.querySelector('.access-options').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('password').focus();
+    }
+    
+    function hideLoginForm() {
+      document.querySelector('.access-options').style.display = 'grid';
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('password').value = '';
+      document.getElementById('loginError').style.display = 'none';
+    }
+    
+    function accessDepartment(mode) {
+      if (!selectedDepartment) return;
+      
+      const params = new URLSearchParams({
+        name: selectedDepartment,
+        month: '{{ default_month }}',
+        year: '{{ default_year }}'
+      });
+      
+      if (mode === 'readonly') {
+        // Clear any existing department session and go to read-only
+        fetch('/logout', { method: 'POST' }).finally(() => {
+          window.location.href = `/dept?${params.toString()}`;
+        });
+      }
+    }
+    
+    async function loginToDepartment(event) {
+      event.preventDefault();
+      
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('loginError');
+      
+      if (!selectedDepartment || !password) {
+        showError('Please enter a password');
+        return;
+      }
+      
+      try {
+        const formData = new FormData();
+        formData.append('department', selectedDepartment);
+        formData.append('password', password);
+        formData.append('action', 'department_login');
+        
+        const response = await fetch('/department-login', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          const params = new URLSearchParams({
+            name: selectedDepartment,
+            month: '{{ default_month }}',
+            year: '{{ default_year }}'
+          });
+          window.location.href = `/dept?${params.toString()}`;
+        } else {
+          showError(result.message || 'Invalid password');
+        }
+      } catch (error) {
+        showError('Login failed. Please try again.');
+      }
+    }
+    
+    function showError(message) {
+      const errorDiv = document.getElementById('loginError');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+    }
+    
+    function showForgotPassword() {
+      // Hide login form and show password recovery information
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('forgotPasswordInfo').style.display = 'block';
+    }
+    
+    function hideForgotPasswordInfo() {
+      // Show login form and hide password recovery information
+      document.getElementById('forgotPasswordInfo').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+    }
+    
+    async function sendSmsOtp() {
+      if (!selectedDepartment) {
+        alert('No department selected');
+        return;
+      }
+      
+      try {
+        const formData = new FormData();
+        formData.append('action', 'send_sms_otp');
+        formData.append('department', selectedDepartment);
+        
+        const response = await fetch('/forgot-password', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const responseText = await response.text();
+        
+        if (response.ok) {
+          // Check if SMS was sent successfully by looking for success message in response
+          if (responseText.includes('OTP sent via SMS')) {
+            // Extract OTP from response for demo mode
+            const otpMatch = responseText.match(/OTP: (\d{6})/);
+            const otp = otpMatch ? otpMatch[1] : '';
+            
+            let message = `OTP sent via SMS to ${selectedDepartment} administrators!`;
+            if (otp) {
+              message += `\n\n[DEV MODE] Your OTP: ${otp}`;
+            }
+            message += '\n\nUse this OTP to reset your password at: http://localhost:5000/forgot-password';
+            
+            alert(message);
+            
+            // Optionally redirect to full forgot password page
+            if (confirm('Open password reset page to enter OTP?')) {
+              window.open('/forgot-password', '_blank');
+            }
+            
+            closeDepartmentModal();
+          } else {
+            alert('SMS OTP feature may not be configured for this department. Please try email reset or contact administrator.');
+          }
+        } else {
+          alert('Failed to send SMS OTP. Please try email reset or contact the administrator directly.');
+        }
+      } catch (error) {
+        alert('Failed to send SMS OTP. Please try again or contact the administrator.');
+      }
+    }
+    
+    async function sendEmailReset() {
+      if (!selectedDepartment) {
+        alert('No department selected');
+        return;
+      }
+      
+      try {
+        const formData = new FormData();
+        formData.append('action', 'send_reset_email');
+        formData.append('department', selectedDepartment);
+        
+        const response = await fetch('/forgot-password', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          alert(`Password reset email sent to ${selectedDepartment} administrators!`);
+          closeDepartmentModal();
+        } else {
+          alert('Failed to send reset email. Please try contacting the administrator directly.');
+        }
+      } catch (error) {
+        alert('Failed to send reset email. Please try again or contact the administrator.');
+      }
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('departmentModal');
+      if (event.target === modal) {
+        closeDepartmentModal();
+      }
+    }
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeDepartmentModal();
+      }
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,1239 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card-header">
+    <div class="dept-header">
+      <div class="dept-info">
+        <h1>{{ dept_name }}</h1>
+        <p class="dept-subtitle">Shift Rota for {{ month_names[month-1] if month_names is defined else month }}/{{ year }}</p>
+        {% if user_department %}
+          {% if is_authenticated_for_dept %}
+            <div class="auth-status authenticated">
+              <span class="auth-icon">🔓</span> Authenticated - Edit Mode
+            </div>
+          {% else %}
+            <div class="auth-status readonly">
+              <span class="auth-icon">🔒</span> Logged into {{ user_department }} - Read-only for {{ dept_name }}
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="auth-status readonly">
+            <span class="auth-icon">👁️</span> Read-only Mode - <a href="/" class="login-link">Go to Home to Login</a>
+          </div>
+        {% endif %}
+      </div>
+      <div class="header-actions">
+        <a href="{{ url_for('index') }}" class="btn-back">
+          <span class="back-icon">←</span> Back to Home
+        </a>
+        <div class="time-controls">
+          <form class="control-form" action="{{ url_for('department') }}" method="get">
+            <input type="hidden" name="name" value="{{ dept_name }}">
+            <div class="control-group">
+              <label class="control-label">📅 Month</label>
+              <select name="month" class="control-select">
+                {% set month_names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+                {% for m in range(1,13) %}
+                  <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ month_names[m-1] }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="control-group">
+              <label class="control-label">🗓️ Year</label>
+              <input type="number" name="year" value="{{ year }}" min="2000" max="2100" class="control-input" />
+            </div>
+            {% for p in selected_processes %}
+              <input type="hidden" name="process" value="{{ p }}" />
+            {% endfor %}
+            {% for s in selected_shifts %}
+              <input type="hidden" name="shift" value="{{ s }}" />
+            {% endfor %}
+            <button type="submit" class="btn-primary">➡️ Go</button>
+          </form>
+        </div>
+        <form class="export-form" action="{{ url_for('export_csv') }}" method="get">
+          <input type="hidden" name="name" value="{{ dept_name }}">
+          <input type="hidden" name="month" value="{{ month }}">
+          <input type="hidden" name="year" value="{{ year }}">
+          {% for p in selected_processes %}
+            <input type="hidden" name="process" value="{{ p }}" />
+          {% endfor %}
+          {% for s in selected_shifts %}
+            <input type="hidden" name="shift" value="{{ s }}" />
+          {% endfor %}
+          <button type="submit" class="btn-secondary">📄 Export CSV</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body">
+    {% if show_filters %}
+      <div class="filters-section">
+        <h3>🔍 Filters</h3>
+        <form action="{{ url_for('department') }}" method="get" class="filters-form">
+          <input type="hidden" name="name" value="{{ dept_name }}">
+          <input type="hidden" name="month" value="{{ month }}">
+          <input type="hidden" name="year" value="{{ year }}">
+          
+          <div class="filter-group">
+            <label class="filter-label">💼 Processes:</label>
+            <div class="checkbox-grid">
+              {% for p in all_processes %}
+                <label class="checkbox-item">
+                  <input type="checkbox" name="process" value="{{ p }}" {% if not selected_processes or (p in selected_processes) %}checked{% endif %}>
+                  <span class="checkmark"></span>
+                  {{ p }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+          
+          <div class="filter-group">
+            <label class="filter-label">⏰ Shifts:</label>
+            <div class="checkbox-grid">
+              {% for s in all_shifts %}
+                <label class="checkbox-item">
+                  <input type="checkbox" name="shift" value="{{ s }}" {% if s in selected_shifts %}checked{% endif %}>
+                  <span class="checkmark"></span>
+                  <span class="shift-badge {{ s }}">{{ s }}</span>
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+          
+          <div class="filter-actions">
+            <button type="submit" class="btn-primary">🔄 Apply Filters</button>
+          </div>
+        </form>
+      </div>
+    {% endif %}
+
+    {% if not rows %}
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <h3>No Data Available</h3>
+        <p class="note">No rota data found for this department in the selected period. Try adjusting your filters or selecting a different time period.</p>
+      </div>
+    {% else %}
+      <div class="rota-section">
+        <div class="section-header">
+          <div class="section-title">
+            <h3>🗺️ Shift Rota</h3>
+            <div class="rota-stats">
+              <span class="stat-item">👥 {{ rows|length }} employees</span>
+              <span class="stat-item">📅 {{ date_headers|length }} days</span>
+            </div>
+          </div>
+          <div class="section-actions">
+            {% if can_edit %}
+              <button type="submit" form="rota-form" class="btn-primary save-btn">💾 Save Changes</button>
+            {% endif %}
+            {% if dept_name == 'Service Desk' %}
+              <a href="{{ url_for('night_shift_allowances', dept=dept_name, month=month, year=year) }}" class="btn-allowance">🌙 Night Shift Allowances</a>
+              <a href="{{ url_for('weekend_allowances', dept=dept_name, month=month, year=year) }}" class="btn-allowance">🏡 Weekend Allowances</a>
+              
+              <!-- Export Buttons -->
+              <div class="export-allowances">
+                <a href="{{ url_for('export_allowances', dept=dept_name, month=month, year=year, type='EST') }}" class="btn-export">📊 Export EST</a>
+                <a href="{{ url_for('export_allowances', dept=dept_name, month=month, year=year, type='PST') }}" class="btn-export">📊 Export PST</a>
+                <a href="{{ url_for('export_allowances', dept=dept_name, month=month, year=year, type='Weekend') }}" class="btn-export">📊 Export Weekend</a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        
+        <form action="{{ url_for('update') }}" method="post" class="rota-form" id="rota-form">
+          <input type="hidden" name="name" value="{{ dept_name }}">
+          <input type="hidden" name="month" value="{{ month }}">
+          <input type="hidden" name="year" value="{{ year }}">
+          {% for p in selected_processes %}
+            <input type="hidden" name="process" value="{{ p }}" />
+          {% endfor %}
+          {% for s in selected_shifts %}
+            <input type="hidden" name="shift" value="{{ s }}" />
+          {% endfor %}
+
+          <div class="table-wrap">
+            <table class="rota-table">
+              <thead>
+                <tr>
+                  <th class="sticky-col process-col">Process</th>
+                  <th class="sticky-col employee-col">Employee</th>
+                  {% for h in date_headers %}
+                    <th class="date-col">
+                      <div class="date-header">
+                        <div class="weekday">{{ h.weekday }}</div>
+                        <div class="date">{{ h.day }}</div>
+                        <div class="month">{{ h.month_short }}</div>
+                      </div>
+                    </th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                  <tr class="employee-row">
+                    <td class="sticky-col process-cell">{{ row.process }}</td>
+                    <td class="sticky-col employee-cell">{{ row.employee }}</td>
+                    {% for c in row.cells %}
+                      <td class="shift-cell {{ c.value }}">
+                        <select name="cell[{{ row.process }}][{{ row.employee }}][{{ c.date_str }}]" class="shift-select" {% if not can_edit %}disabled{% endif %}>
+                          <option value="">-</option>
+                          {% for s_key, s_desc in shifts.items() %}
+                            <option value="{{ s_key }}" {% if c.value == s_key %}selected{% endif %}>{{ s_key }}: {{ s_desc }}</option>
+                          {% endfor %}
+                        </select>
+                      </td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {% if not can_edit %}
+            <div class="readonly-notice-bottom">
+              <span class="notice-icon">🔒</span>
+              <span>You need to login to edit shift assignments.</span>
+              <a href="{{ url_for('local_login') }}" class="login-link">Login here</a>
+            </div>
+          {% endif %}
+        </form>
+      </div>
+    {% endif %}
+  </div>
+  
+  <!-- Settings Section Removed - Now only available via Settings menu -->
+  {% if False %}
+  <div class="settings-container">
+        <h2>Department Settings</h2>
+        <p class="settings-note">Manage passwords, employees, and shifts for {{ dept_name }}.</p>
+        
+        {% if message %}
+          <div class="message {{ 'success' if success else 'error' }}">{{ message }}</div>
+        {% endif %}
+        
+        <!-- Password Management -->
+        <div class="settings-section">
+          <h3>Password Management</h3>
+          <p class="section-note">Change the password for department access.</p>
+          
+          <form method="post" class="settings-form">
+            <input type="hidden" name="action" value="change_password">
+            <input type="hidden" name="target_department" value="{{ dept_name }}">
+            
+            <div class="form-group">
+              <label class="form-label">New Password:</label>
+              <input type="password" name="new_password" class="form-input" required minlength="6">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Confirm Password:</label>
+              <input type="password" name="confirm_password" class="form-input" required minlength="6">
+            </div>
+            
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">Update Password</button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Employee Management -->
+        <div class="settings-section">
+          <h3>Employee Management</h3>
+          <p class="section-note">Add, edit, or remove employees for this department.</p>
+          
+          <div class="management-grid">
+            <!-- Add Employee -->
+            <div class="management-card">
+              <h4>Add Employee</h4>
+              <form method="post" class="settings-form">
+                <input type="hidden" name="action" value="add_employee">
+                <input type="hidden" name="target_department" value="{{ dept_name }}">
+                
+                <div class="form-group">
+                  <label class="form-label">Process/Role:</label>
+                  <input type="text" name="process" class="form-input" required placeholder="Enter process name">
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">Employee Name:</label>
+                  <input type="text" name="employee_name" class="form-input" required placeholder="Enter employee name">
+                </div>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn-success">Add Employee</button>
+                </div>
+              </form>
+            </div>
+            
+            <!-- Edit Employee -->
+            <div class="management-card">
+              <h4>Edit Employee</h4>
+              <form method="post" class="settings-form">
+                <input type="hidden" name="action" value="edit_employee">
+                <input type="hidden" name="target_department" value="{{ dept_name }}">
+                
+                <div class="form-group">
+                  <label class="form-label">Current Process:</label>
+                  <select name="old_process" class="form-select" required>
+                    <option value="">Select process</option>
+                    {% if all_processes %}
+                      {% for process in all_processes %}
+                        <option value="{{ process }}">{{ process }}</option>
+                      {% endfor %}
+                    {% endif %}
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">Current Employee:</label>
+                  <select name="old_employee" class="form-select" required>
+                    <option value="">Select employee</option>
+                    {% for row in rows %}
+                      <option value="{{ row.employee }}" data-process="{{ row.process }}">{{ row.employee }} ({{ row.process }})</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">New Process:</label>
+                  <input type="text" name="new_process" class="form-input" required placeholder="Enter new process name">
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">New Employee Name:</label>
+                  <input type="text" name="new_employee" class="form-input" required placeholder="Enter new employee name">
+                </div>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn-warning">Update Employee</button>
+                </div>
+              </form>
+            </div>
+            
+            <!-- Remove Employee -->
+            <div class="management-card">
+              <h4>Remove Employee</h4>
+              <form method="post" class="settings-form">
+                <input type="hidden" name="action" value="remove_employee">
+                <input type="hidden" name="target_department" value="{{ dept_name }}">
+                
+                <div class="form-group">
+                  <label class="form-label">Process:</label>
+                  <select name="process" class="form-select" required>
+                    <option value="">Select process</option>
+                    {% if all_processes %}
+                      {% for process in all_processes %}
+                        <option value="{{ process }}">{{ process }}</option>
+                      {% endfor %}
+                    {% endif %}
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">Employee to Remove:</label>
+                  <select name="employee_name" class="form-select" required>
+                    <option value="">Select employee</option>
+                    {% for row in rows %}
+                      <option value="{{ row.employee }}" data-process="{{ row.process }}">{{ row.employee }} ({{ row.process }})</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn-danger" onclick="return confirm('Are you sure?')">Remove Employee</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Shift Management -->
+        <div class="settings-section">
+          <h3>Shift Management</h3>
+          <p class="section-note">Configure shifts for this department.</p>
+          
+          <div class="management-grid">
+            <!-- Add Shift -->
+            <div class="management-card">
+              <h4>Add Shift</h4>
+              <form method="post" class="settings-form">
+                <input type="hidden" name="action" value="add_shift">
+                <input type="hidden" name="target_department" value="{{ dept_name }}">
+                
+                <div class="form-group">
+                  <label class="form-label">Shift Code:</label>
+                  <input type="text" name="shift_code" class="form-input" required placeholder="e.g., APAC, Morning">
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">Shift Description:</label>
+                  <input type="text" name="shift_description" class="form-input" required placeholder="e.g., 5AM to 2PM">
+                </div>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn-success">Add Shift</button>
+                </div>
+              </form>
+            </div>
+            
+            <!-- Edit Shift -->
+            <div class="management-card">
+              <h4>Edit Shift</h4>
+              <form method="post" class="settings-form">
+                <input type="hidden" name="action" value="edit_shift">
+                <input type="hidden" name="target_department" value="{{ dept_name }}">
+                
+                <div class="form-group">
+                  <label class="form-label">Current Shift:</label>
+                  <select name="old_shift_code" class="form-select" required>
+                    <option value="">Select shift to edit</option>
+                    {% for shift_code, shift_desc in shifts.items() %}
+                      <option value="{{ shift_code }}">{{ shift_code }}: {{ shift_desc }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">New Shift Code:</label>
+                  <input type="text" name="new_shift_code" class="form-input" required placeholder="e.g., APAC, Morning">
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">New Shift Description:</label>
+                  <input type="text" name="new_shift_description" class="form-input" required placeholder="e.g., 5AM to 2PM">
+                </div>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn-warning">Update Shift</button>
+                </div>
+              </form>
+            </div>
+            
+            <!-- Remove Shift -->
+            <div class="management-card">
+              <h4>Remove Shift</h4>
+              <form method="post" class="settings-form">
+                <input type="hidden" name="action" value="remove_shift">
+                <input type="hidden" name="target_department" value="{{ dept_name }}">
+                
+                <div class="form-group">
+                  <label class="form-label">Shift to Remove:</label>
+                  <select name="shift_code" class="form-select" required>
+                    <option value="">Select shift to remove</option>
+                    {% for shift_code, shift_desc in shifts.items() %}
+                      <option value="{{ shift_code }}">{{ shift_code }}: {{ shift_desc }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn-danger" onclick="return confirm('Are you sure?')">Remove Shift</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  
+  <style>
+    /* Department Header */
+    .dept-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+    
+    .dept-info h1 {
+      margin-bottom: 0.5rem;
+    }
+    
+    .dept-subtitle {
+      color: var(--text-secondary);
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 400;
+    }
+    
+    .auth-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    
+    .auth-status.authenticated {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+    
+    .auth-status.readonly {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+    
+    .auth-icon {
+      font-size: 1rem;
+    }
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, var(--text-secondary), #4b5563);
+      color: white;
+      text-decoration: none;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      border: 1px solid var(--border-color);
+    }
+    
+    .btn-back:hover {
+      background: linear-gradient(135deg, #4b5563, var(--text-secondary));
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      text-decoration: none;
+      color: white;
+    }
+    
+    .back-icon {
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+    
+    .time-controls {
+      display: flex;
+      align-items: flex-end;
+    }
+    
+    .control-form {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-end;
+    }
+    
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    
+    .control-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    
+    .control-select, .control-input {
+      min-width: 100px;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+    }
+    
+    .btn-secondary {
+      background: linear-gradient(135deg, var(--accent-color), #0e7490);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    /* Filters Section */
+    .filters-section {
+      background: linear-gradient(135deg, #f8faff, var(--bg-secondary));
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      border: 1px solid var(--border-light);
+    }
+    
+    .filters-section h3 {
+      margin: 0 0 1.5rem 0;
+      color: var(--text-primary);
+      font-size: 1.25rem;
+    }
+    
+    .filters-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    
+    .filter-label {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 1rem;
+    }
+    
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+    
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      font-weight: 400;
+    }
+    
+    .checkbox-item:hover {
+      background-color: rgba(79, 70, 229, 0.05);
+    }
+    
+    .checkbox-item input[type="checkbox"] {
+      display: none;
+    }
+    
+    .checkmark {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+      position: relative;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    
+    .checkbox-item input[type="checkbox"]:checked + .checkmark {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    
+    .checkbox-item input[type="checkbox"]:checked + .checkmark::after {
+      content: '✓';
+      position: absolute;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      left: 2px;
+      top: -2px;
+    }
+    
+    .shift-badge {
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    
+    .filter-actions {
+      display: flex;
+      justify-content: flex-start;
+    }
+    
+    /* Rota Section */
+    .rota-section {
+      margin-top: 2rem;
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+    
+    .section-title {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .section-title h3 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: var(--text-primary);
+    }
+    
+    .section-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .rota-stats {
+      display: flex;
+      gap: 1rem;
+    }
+    
+    .stat-item {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    
+    .btn-allowance {
+      background: linear-gradient(135deg, var(--warning-color), #d97706);
+      color: white;
+      text-decoration: none;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .btn-allowance:hover {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      transform: translateY(-2px);
+      text-decoration: none;
+      color: white;
+    }
+    
+    .export-allowances {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+    
+    .btn-export {
+      background: linear-gradient(135deg, #059669, #047857);
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: 1px solid #065f46;
+    }
+    
+    .btn-export:hover {
+      background: linear-gradient(135deg, #047857, #065f46);
+      transform: translateY(-2px);
+      text-decoration: none;
+      color: white;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+    }
+    
+    .save-btn {
+      font-size: 0.9rem;
+      padding: 0.75rem 1.5rem;
+    }
+    
+    /* Enhanced Table Styles */
+    .rota-table {
+      position: relative;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    
+    .sticky-col {
+      position: sticky;
+      background: var(--bg-primary);
+      border-right: 2px solid var(--border-color);
+    }
+    
+    .process-col {
+      width: 160px;
+      min-width: 160px;
+      left: 0;
+      z-index: 20;
+    }
+    
+    .employee-col {
+      width: 180px;
+      min-width: 180px;
+      left: 160px;
+      z-index: 19;
+    }
+    
+    .process-cell {
+      font-weight: 500;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      background: var(--bg-primary) !important;
+      position: sticky;
+      left: 0;
+      z-index: 20;
+      border-right: 2px solid var(--border-color);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .employee-cell {
+      font-weight: 500;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      background: var(--bg-primary) !important;
+      position: sticky;
+      left: 160px;
+      z-index: 19;
+      border-right: 2px solid var(--border-color);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .date-col {
+      width: 100px;
+      min-width: 100px;
+      border-left: 1px solid var(--border-color);
+    }
+    
+    .date-header {
+      text-align: center;
+      line-height: 1.2;
+      padding: 0.5rem;
+    }
+    
+    .date-header .weekday {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    
+    .date-header .date {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .date-header .month {
+      font-size: 0.7rem;
+      color: var(--text-light);
+    }
+    
+    .employee-row:nth-child(even) {
+      background-color: rgba(79, 70, 229, 0.02);
+    }
+    
+    .shift-cell {
+      padding: 0.5rem 0.25rem;
+    }
+    
+    .shift-select {
+      width: 100%;
+      padding: 0.4rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      background: transparent;
+      cursor: pointer;
+    }
+    
+    .shift-select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+    }
+    
+    .shift-select:disabled {
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    
+    /* Save Section */
+    .save-section {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, var(--bg-secondary), #f0f9ff);
+      border-radius: var(--radius-lg);
+      text-align: center;
+    }
+    
+    .save-btn {
+      font-size: 1rem;
+      padding: 1rem 2rem;
+    }
+    
+    .save-note {
+      margin: 0.75rem 0 0 0;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+    
+    .readonly-notice {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      color: var(--text-secondary);
+    }
+    
+    .notice-icon {
+      font-size: 1.2rem;
+    }
+    
+    .login-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .login-link:hover {
+      text-decoration: underline;
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-secondary);
+    }
+    
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+    
+    .empty-state h3 {
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .dept-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .header-actions {
+        justify-content: space-between;
+      }
+      
+      .checkbox-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+      
+      .employee-col {
+        width: 120px;
+        left: 120px;
+      }
+      
+      .process-col {
+        width: 120px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .control-form {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
+      
+      .header-actions {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .rota-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .checkbox-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .sticky-col {
+        position: static;
+        box-shadow: none;
+      }
+      
+      .date-col {
+        min-width: 70px;
+        width: 70px;
+      }
+      
+      .export-allowances {
+        justify-content: center;
+        margin-top: 1rem;
+        gap: 0.3rem;
+      }
+      
+      .btn-export {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.8rem;
+      }
+    }
+    
+    
+    /* Settings Specific Styles */
+    .settings-container {
+      padding: 2rem;
+    }
+    
+    .settings-container h2 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-primary);
+    }
+    
+    .settings-note {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      font-size: 1rem;
+    }
+    
+    .settings-section {
+      background: var(--bg-secondary);
+      padding: 2rem;
+      border-radius: var(--radius-lg);
+      margin-bottom: 2rem;
+    }
+    
+    .settings-section h3 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-primary);
+    }
+    
+    .section-note {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+    
+    .management-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.5rem;
+    }
+    
+    @media (max-width: 1200px) {
+      .management-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .management-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .management-card {
+      background: var(--bg-tertiary);
+      padding: 1.5rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+    
+    .management-card h4 {
+      margin: 0 0 1rem 0;
+      color: var(--text-primary);
+      font-size: 1.1rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .form-input, .form-select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      transition: border-color 0.2s ease;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.1);
+    }
+    
+    .settings-form {
+      max-width: 100%;
+    }
+    
+    .form-actions {
+      margin-top: 1rem;
+    }
+    
+    .btn-success {
+      background: #059669;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+    
+    .btn-success:hover {
+      background: #047857;
+      transform: translateY(-2px);
+    }
+    
+    .btn-warning {
+      background: #d97706;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+    
+    .btn-warning:hover {
+      background: #b45309;
+      transform: translateY(-2px);
+    }
+    
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+    
+    .btn-danger:hover {
+      background: #b91c1c;
+      transform: translateY(-2px);
+    }
+    
+    .message {
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      margin-bottom: 2rem;
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    .message.success {
+      background: #dcfce7;
+      color: #166534;
+    }
+    
+    .message.error {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+  </style>
+  
+  <script>
+    // Enhanced dropdown filtering for employee management
+    document.addEventListener('DOMContentLoaded', function() {
+      // Filter employee dropdowns based on process selection
+      const processSelects = document.querySelectorAll('select[name="old_process"], select[name="process"]');
+      processSelects.forEach(processSelect => {
+        processSelect.addEventListener('change', function() {
+          const selectedProcess = this.value;
+          const form = this.closest('form');
+          const employeeSelect = form.querySelector('select[name="old_employee"], select[name="employee_name"]');
+          
+          if (employeeSelect) {
+            const options = employeeSelect.querySelectorAll('option[data-process]');
+            options.forEach(option => {
+              if (selectedProcess === '' || option.getAttribute('data-process') === selectedProcess) {
+                option.style.display = 'block';
+              } else {
+                option.style.display = 'none';
+              }
+            });
+            
+            // Reset employee selection
+            employeeSelect.value = '';
+          }
+        });
+      });
+      
+      // Immediately update shift cell colors when dropdown changes
+      const shiftSelects = document.querySelectorAll('.shift-select');
+      shiftSelects.forEach(select => {
+        select.addEventListener('change', function() {
+          const selectedValue = this.value;
+          const cell = this.closest('.shift-cell');
+          
+          // Remove all existing shift classes
+          const shiftClasses = ['APAC', 'Morning', 'General', 'Afternoon', 'Evening', 'Night', 'Weekend', 'PL', 'AL', 'Early', 'WO', 'Holiday', 'LWD'];
+          shiftClasses.forEach(className => {
+            cell.classList.remove(className);
+          });
+          
+          // Add the new shift class if a value is selected
+          if (selectedValue) {
+            cell.classList.add(selectedValue);
+          }
+        });
+      });
+    });
+  </script>
+{% endblock %}

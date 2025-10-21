@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Employee Shift Tracker</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    /* Full-page background */
+    background: url("{{ url_for('static', filename='company_logo.jpg') }}") no-repeat center center fixed;
+    background-size: cover;
+    color: #fff;
+}
+.container, .landing, #dept-container {
+    background: rgba(0,0,0,0.65);
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px auto;
+    max-width: 95%;
+}
+h2 {
+    text-align: center;
+    color: #fff; 
+}
+.controls {
+    margin-bottom: 15px;
+    text-align: center;
+}
+.checkboxes {
+    margin: 10px 0;
+    text-align: center;
+}
+table {
+    border-collapse: collapse;
+    width: max-content;
+    min-width: 1200px;
+    margin: auto;
+    background: #fff;
+    color: #000;
+}
+th, td {
+    border: 1px solid #000;
+    text-align: center;
+    padding: 6px;
+    min-width: 120px;
+}
+th {
+    background-color: yellow;
+    color: #000;
+}
+/* Shift Colors */
+.APAC { background-color: lightblue !important; }
+.Morning { background-color: peru !important; }
+.General { background-color: lightpink !important; }
+.Afternoon { background-color: green !important; color: white; }
+.Evening { background-color: skyblue !important; }
+.Night { background-color: #222 !important; color: #fff !important; }
+/* Extra Styling */
+@media (max-width: 1300px) {
+    table { min-width: 800px; }
+}
+@media (max-width: 900px) {
+    table { min-width: 400px; }
+    th, td { padding: 4px; font-size: 0.98em; }
+}
+</style>
+
+</head>
+<body>
+<h2>Department Selector</h2>
+<div class="dept-list" id="landing">
+  <button onclick="openDept('Service Desk')">Service Desk</button>
+  <button onclick="openDept('App Tools')">App Tools</button>
+  <button onclick="openDept('App Development')">App Development</button>
+  <button onclick="openDept('Cloud Ops')">Cloud Ops</button>
+  <button onclick="openDept('End User Ops')">End User Ops</button>
+  <button onclick="openDept('Messaging')">Messaging</button>
+  <button onclick="openDept('Network Team')">Network Team</button>
+  <button onclick="openDept('Threat Response Team')">Threat Response Team</button>
+</div>
+
+<div id="dept-container" style="display:none;">
+  <button class="back-btn" onclick="goBack()">← Back</button>
+  <h2 id="dept-title"></h2>
+  <div class="controls">
+    <label for="month">Month:</label>
+    <select id="month"></select>
+    <label for="year">Year:</label>
+    <select id="year"></select>
+    <button onclick="loadTable()">OK</button>
+    <button class="export-btn" onclick="exportCSV()">Export to CSV</button>
+  </div>
+  <div class="checkboxes" id="process-shift-filters"></div>
+  <div id="table-container" style="overflow-x:auto;"></div>
+</div>
+
+<script>
+let isEditor=false;
+function askPassword(){
+  const pwd=prompt("Enter editor password (leave blank for read-only):","");
+  if(pwd==="editor123") isEditor=true;
+  else alert("Read-only mode activated");
+}
+askPassword();
+
+const allDepartments = {
+  "Service Desk": {
+    processes: {
+      "INDIA AND APAC":["Adithya K G","Bandhavi V","Chandru Rajendran","Chandraprakash","Dakshinamoorthy Selvaraj","Harish Kuruba","J Mohan Kumar","Navaneetha Krishnan","Rakesh M","Sandeep Kumar","Sathish Chandran","Sheetham Sahoo","Shilpa C","Shripad L","Sree Hari N","Subhash K"],
+      "EMEA AND AMEC":["Arpitha K B","Ashoka K","Jebosh Raju","Kanagavalli Dhamodharan","Kotlapalli Nikhitha","Manohar Kirshna","Ramya J","Sayed Abbas","Shaktivel K","Vaishali Sahu","Venkata Sai Nagendra Batchu"]
+    },
+    shifts: {
+      "APAC":"5AM to 2PM","Morning":"7AM to 4PM","General":"11AM to 8PM","Afternoon":"3PM to 12AM","Evening":"6PM to 3AM","Night":"8PM to 5AM","Weekend":"7AM to 4PM","PL":"Planned Leave","AL":"Adhoc Leave","Early":"1PM to 10PM","WO":"Weekly Off","Holiday":"Holiday","LWD":"Last Working Day"
+    },
+    showFilters:true
+  },
+  "App Tools": { processes:{}, shifts:{}, showFilters:false },
+  "App Development": { processes:{}, shifts:{}, showFilters:false },
+  "Cloud Ops": { processes:{}, shifts:{}, showFilters:false },
+  "End User Ops": { processes:{}, shifts:{}, showFilters:false },
+  "Messaging": { processes:{}, shifts:{}, showFilters:false },
+  "Network Team": { processes:{}, shifts:{}, showFilters:false },
+  "Threat Response Team": { processes:{}, shifts:{}, showFilters:false }
+};
+
+const monthSelect=document.getElementById("month");
+const yearSelect=document.getElementById("year");
+const tableContainer=document.getElementById("table-container");
+const deptContainer=document.getElementById("dept-container");
+const deptTitle=document.getElementById("dept-title");
+const filterDiv=document.getElementById("process-shift-filters");
+let currentDept="";
+
+// Populate month/year
+for(let m=0;m<12;m++){
+  const opt=document.createElement("option");
+  opt.value=m;
+  opt.textContent=new Date(0,m).toLocaleString('default',{month:'long'});
+  monthSelect.appendChild(opt);
+}
+const thisYear=new Date().getFullYear();
+for(let y=thisYear-1;y<=thisYear+5;y++){
+  const opt=document.createElement("option");
+  opt.value=y;
+  opt.textContent=y;
+  yearSelect.appendChild(opt);
+}
+monthSelect.value=new Date().getMonth();
+yearSelect.value=thisYear;
+
+function goBack(){
+  deptContainer.style.display="none";
+  document.getElementById("landing").style.display="block";
+}
+function openDept(dept){
+  currentDept=dept;
+  document.getElementById("landing").style.display="none";
+  deptContainer.style.display="block";
+  deptTitle.textContent=dept+" Department";
+  renderFilters();
+  loadTable();
+}
+function renderFilters(){
+  const deptObj=allDepartments[currentDept];
+  filterDiv.innerHTML="";
+  if(deptObj.showFilters){
+    let html=`<strong>Processes:</strong>`;
+    for(const p in deptObj.processes){
+      html+=` <label><input type="checkbox" class="processFilter" value="${p}" checked> ${p}</label>`;
+    }
+    html+=`<br><strong>Shifts:</strong>`;
+    for(const s in deptObj.shifts){
+      html+=` <label><input type="checkbox" class="shiftFilter" value="${s}"> ${s}</label>`;
+    }
+    filterDiv.innerHTML=html;
+    filterDiv.addEventListener("change",applyFilters);
+  }
+}
+function saveData(key,value){let all=JSON.parse(localStorage.getItem("shiftData"))||{};all[key]=value;localStorage.setItem("shiftData",JSON.stringify(all));}
+function loadData(key){let all=JSON.parse(localStorage.getItem("shiftData"))||{};return all[key]||{};}
+function getMonthDates(year,month){
+  const dates=[]; const firstOfMonth=new Date(year,month,1); let start=new Date(firstOfMonth);
+  while(start.getDay()!==1) start.setDate(start.getDate()+1);
+  let d=new Date(start);
+  while(true){
+    dates.push(new Date(d));
+    d.setDate(d.getDate()+1);
+    if(d.getMonth()!==month && d.getDay()===1) break;
+  }
+  return dates;
+}
+function loadTable(){
+  const month=parseInt(monthSelect.value);
+  const year=parseInt(yearSelect.value);
+  const deptObj=allDepartments[currentDept];
+  if(!deptObj.processes || Object.keys(deptObj.processes).length===0){ tableContainer.innerHTML="<p>No data available.</p>"; return; }
+  const savedData=loadData(currentDept+"-"+month+"-"+year);
+  const dates=getMonthDates(year,month);
+  let html="<table><thead><tr><th>Process</th><th>Employee</th>";
+  dates.forEach(d=>{ const day=d.toLocaleString('default',{weekday:'short'}); html+=`<th>${day} ${d.getDate()} ${d.toLocaleString('default',{month:'short'})}</th>`; });
+  html+="</tr></thead><tbody>";
+  for(const process in deptObj.processes){
+    deptObj.processes[process].forEach(emp=>{
+      html+=`<tr data-process="${process}"><td>${process}</td><td>${emp}</td>`;
+      dates.forEach(d=>{
+        const cellId=`${process}-${emp}-${year}-${month+1}-${d.getDate()}`;
+        const defaultShift=d.getDay()===6||d.getDay()===0?"WO":"General";
+        const savedShift=savedData[cellId]||defaultShift;
+        html+=`<td class="${savedShift}"><select data-id="${cellId}" ${isEditor?"":"disabled"}>`;
+        html+=`<option value=""></option>`;
+        for(const s in deptObj.shifts){
+          const selected=(savedShift===s)?"selected":"";
+          html+=`<option class="${s}" value="${s}" ${selected}>${s} (${deptObj.shifts[s]})</option>`;
+        }
+        html+=`</select></td>`;
+      });
+      html+="</tr>";
+    });
+  }
+  html+="</tbody></table>";
+  tableContainer.innerHTML=html;
+}
+tableContainer.addEventListener("change",function(e){
+  if(e.target.tagName==="SELECT"){
+    const select=e.target; const val=select.value; const td=select.parentElement;
+    td.className=val; const month=parseInt(monthSelect.value); const year=parseInt(yearSelect.value);
+    const key=currentDept+"-"+month+"-"+year; let savedData=loadData(key); savedData[select.dataset.id]=val; saveData(key,savedData);
+  }
+});
+function applyFilters(){
+  const selectedProcesses=[...document.querySelectorAll(".processFilter:checked")].map(cb=>cb.value);
+  const selectedShifts=[...document.querySelectorAll(".shiftFilter:checked")].map(cb=>cb.value);
+  document.querySelectorAll("#table-container tbody tr").forEach(row=>{
+    const process=row.dataset.process; let show=selectedProcesses.includes(process);
+    if(show && selectedShifts.length>0){
+      let hasSelected=false; row.querySelectorAll("td select").forEach(sel=>{ if(sel.value && selectedShifts.includes(sel.value)) hasSelected=true; });
+      show=hasSelected;
+    }
+    row.style.display=show?"":"none";
+  });
+}
+function exportCSV(){
+  let csv=""; const rows=document.querySelectorAll("#table-container table tr");
+  rows.forEach(r=>{
+    const cols=r.querySelectorAll("th,td"); let row=[]; cols.forEach(c=>row.push('"'+c.innerText.replace(/"/g,'""')+'"')); csv+=row.join(",")+"\n";
+  });
+  const blob=new Blob([csv],{type:"text/csv"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=currentDept+"_ShiftRota.csv"; a.click();
+}
+monthSelect.value=new Date().getMonth(); yearSelect.value=new Date().getFullYear();
+</script>
+</body>
+</html>

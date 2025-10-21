@@ -1,0 +1,612 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card-header">
+  <div class="settings-header">
+    <div class="settings-info">
+      <h1>Department Settings</h1>
+      <p class="note">Manage department-specific settings, employees, and shifts.</p>
+    </div>
+    <a href="javascript:goBack()" class="btn-back">
+      <span class="back-icon">←</span> Back
+    </a>
+  </div>
+</div>
+<div class="card-body">
+  {% if message %}
+    <div class="message {{ 'success' if success else 'error' }}">{{ message }}</div>
+  {% endif %}
+  
+  <!-- Department Info -->
+  <div class="info-section">
+    <h3>Department Information</h3>
+    {% if user_department %}
+      <p><strong>Current Department:</strong> {{ user_department }}</p>
+    {% endif %}
+    {% if is_admin %}
+      <p class="admin-badge"><strong>Role:</strong> System Administrator</p>
+    {% endif %}
+  </div>
+  
+  <!-- Password Management -->
+  <div class="settings-section">
+    <h2>Password Management</h2>
+    <p class="section-note">Change the password for department access. Passwords must be at least 6 characters long.</p>
+    
+    <form method="post" class="settings-form">
+      <input type="hidden" name="action" value="change_password">
+      
+      {% if is_admin and available_departments|length > 1 %}
+        <div class="form-group">
+          <label class="form-label">Department:</label>
+          <select name="target_department" class="form-select" required>
+            {% for dept in available_departments %}
+              <option value="{{ dept }}" {{ 'selected' if dept == user_department else '' }}>{{ dept }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      {% else %}
+        <input type="hidden" name="target_department" value="{{ user_department }}">
+        <div class="current-dept">
+          <strong>Department:</strong> {{ user_department }}
+        </div>
+      {% endif %}
+      
+      <div class="form-group">
+        <label class="form-label">New Password:</label>
+        <input type="password" name="new_password" class="form-input" required minlength="6">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Confirm Password:</label>
+        <input type="password" name="confirm_password" class="form-input" required minlength="6">
+      </div>
+      
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Update Password</button>
+      </div>
+    </form>
+  </div>
+  
+  <!-- Employee Management -->
+  <div class="settings-section">
+    <h2>Employee Management</h2>
+    <p class="section-note">Add, edit, or remove employees and organize them by process/role.</p>
+    
+    <div class="management-grid">
+      <!-- Add Employee Form -->
+      <div class="management-card">
+        <h3>Add Employee</h3>
+        <form method="post" class="settings-form">
+          <input type="hidden" name="action" value="add_employee">
+          
+          {% if is_admin and available_departments|length > 1 %}
+          <div class="form-group">
+            <label class="form-label">Department:</label>
+            <select name="target_department" class="form-select" required>
+              {% for dept in available_departments %}
+                <option value="{{ dept }}" {{ 'selected' if dept == user_department else '' }}>{{ dept }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          
+          <div class="form-group">
+            <label class="form-label">Process/Role:</label>
+            <input type="text" name="process" class="form-input" required placeholder="Enter process or role name">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Employee Name:</label>
+            <input type="text" name="employee_name" class="form-input" required placeholder="Enter employee name">
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="btn-success">Add Employee</button>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Edit Employee Form -->
+      <div class="management-card">
+        <h3>Edit Employee</h3>
+        <form method="post" class="settings-form">
+          <input type="hidden" name="action" value="edit_employee">
+          
+          {% if is_admin and available_departments|length > 1 %}
+          <div class="form-group">
+            <label class="form-label">Department:</label>
+            <select name="target_department" class="form-select" required>
+              {% for dept in available_departments %}
+                <option value="{{ dept }}" {{ 'selected' if dept == user_department else '' }}>{{ dept }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          
+          <div class="form-group">
+            <label class="form-label">Current Process:</label>
+            <select name="old_process" class="form-select" required>
+              <option value="">Select process</option>
+              {% for dept_name in available_departments %}
+                {% if dept_name in departments and departments[dept_name].processes %}
+                  {% for process in departments[dept_name].processes.keys() %}
+                    <option value="{{ process }}">{{ process }}</option>
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Current Employee:</label>
+            <select name="old_employee" class="form-select" required>
+              <option value="">Select employee</option>
+              {% for dept_name in available_departments %}
+                {% if dept_name in departments and departments[dept_name].processes %}
+                  {% for process, employees in departments[dept_name].processes.items() %}
+                    {% for emp in employees %}
+                      <option value="{{ emp }}" data-process="{{ process }}">{{ emp }} ({{ process }})</option>
+                    {% endfor %}
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">New Process/Role:</label>
+            <input type="text" name="new_process" class="form-input" required placeholder="Enter new process name">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">New Employee Name:</label>
+            <input type="text" name="new_employee" class="form-input" required placeholder="Enter new employee name">
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="btn-warning">Update Employee</button>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Remove Employee Form -->
+      <div class="management-card">
+        <h3>Remove Employee</h3>
+        <form method="post" class="settings-form">
+          <input type="hidden" name="action" value="remove_employee">
+          
+          {% if is_admin and available_departments|length > 1 %}
+          <div class="form-group">
+            <label class="form-label">Department:</label>
+            <select name="target_department" class="form-select" required>
+              {% for dept in available_departments %}
+                <option value="{{ dept }}" {{ 'selected' if dept == user_department else '' }}>{{ dept }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          
+          <div class="form-group">
+            <label class="form-label">Process:</label>
+            <select name="process" class="form-select" required>
+              <option value="">Select process</option>
+              {% for dept_name in available_departments %}
+                {% if dept_name in departments and departments[dept_name].processes %}
+                  {% for process in departments[dept_name].processes.keys() %}
+                    <option value="{{ process }}">{{ process }}</option>
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Employee to Remove:</label>
+            <select name="employee_name" class="form-select" required>
+              <option value="">Select employee</option>
+              {% for dept_name in available_departments %}
+                {% if dept_name in departments and departments[dept_name].processes %}
+                  {% for process, employees in departments[dept_name].processes.items() %}
+                    {% for emp in employees %}
+                      <option value="{{ emp }}" data-process="{{ process }}">{{ emp }} ({{ process }})</option>
+                    {% endfor %}
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="btn-danger" onclick="return confirm('Are you sure you want to remove this employee?')">Remove Employee</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Current Employees Display -->
+    <div class="current-display">
+      <h3>Current Employees</h3>
+      {% for dept_name in available_departments %}
+        {% if dept_name in departments %}
+          <div class="dept-display">
+            <h4>{{ dept_name }}</h4>
+            {% if departments[dept_name].processes %}
+              <div class="processes-list">
+                {% for process, employees in departments[dept_name].processes.items() %}
+                  <div class="process-item">
+                    <span class="process-badge">{{ process }}</span>
+                    <div class="employee-list">
+                      {% for emp in employees %}
+                        <span class="employee-badge">{{ emp }}</span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="no-data">No employees configured</p>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  
+  
+  <!-- Shift Management -->
+  <div class="settings-section">
+    <h2>Shift Management</h2>
+    <p class="section-note">Configure available shifts for your department.</p>
+    
+    <div class="management-grid">
+      <!-- Add Shift Form -->
+      <div class="management-card">
+        <h3>Add Shift</h3>
+        <form method="post" class="settings-form">
+          <input type="hidden" name="action" value="add_shift">
+          
+          {% if is_admin and available_departments|length > 1 %}
+          <div class="form-group">
+            <label class="form-label">Department:</label>
+            <select name="target_department" class="form-select" required>
+              {% for dept in available_departments %}
+                <option value="{{ dept }}" {{ 'selected' if dept == user_department else '' }}>{{ dept }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          
+          <div class="form-group">
+            <label class="form-label">Shift Code:</label>
+            <input type="text" name="shift_code" class="form-input" required placeholder="e.g., APAC, Morning, Night">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Shift Description:</label>
+            <input type="text" name="shift_description" class="form-input" required placeholder="e.g., 5AM to 2PM">
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="btn-success">Add Shift</button>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Edit Shift Form -->
+      <div class="management-card">
+        <h3>Edit Shift</h3>
+        <form method="post" class="settings-form">
+          <input type="hidden" name="action" value="edit_shift">
+          
+          {% if is_admin and available_departments|length > 1 %}
+          <div class="form-group">
+            <label class="form-label">Department:</label>
+            <select name="target_department" class="form-select" required>
+              {% for dept in available_departments %}
+                <option value="{{ dept }}" {{ 'selected' if dept == user_department else '' }}>{{ dept }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          
+          <div class="form-group">
+            <label class="form-label">Current Shift:</label>
+            <select name="old_shift_code" class="form-select" required>
+              <option value="">Select shift to edit</option>
+              {% for dept_name in available_departments %}
+                {% if dept_name in departments and departments[dept_name].shifts %}
+                  {% for shift_code, shift_desc in departments[dept_name].shifts.items() %}
+                    <option value="{{ shift_code }}">{{ shift_code }}: {{ shift_desc }}</option>
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">New Shift Code:</label>
+            <input type="text" name="new_shift_code" class="form-input" required placeholder="e.g., APAC, Morning, Night">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">New Shift Description:</label>
+            <input type="text" name="new_shift_description" class="form-input" required placeholder="e.g., 5AM to 2PM">
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="btn-warning">Update Shift</button>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Remove Shift Form -->
+      <div class="management-card">
+        <h3>Remove Shift</h3>
+        <form method="post" class="settings-form">
+          <input type="hidden" name="action" value="remove_shift">
+          
+          {% if is_admin and available_departments|length > 1 %}
+          <div class="form-group">
+            <label class="form-label">Department:</label>
+            <select name="target_department" class="form-select" required>
+              {% for dept in available_departments %}
+                <option value="{{ dept }}" {{ 'selected' if dept == user_department else '' }}>{{ dept }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          
+          <div class="form-group">
+            <label class="form-label">Shift to Remove:</label>
+            <select name="shift_code" class="form-select" required>
+              <option value="">Select shift to remove</option>
+              {% for dept_name in available_departments %}
+                {% if dept_name in departments and departments[dept_name].shifts %}
+                  {% for shift_code, shift_desc in departments[dept_name].shifts.items() %}
+                    <option value="{{ shift_code }}">{{ shift_code }}: {{ shift_desc }}</option>
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" class="btn-danger" onclick="return confirm('Are you sure you want to remove this shift?')">Remove Shift</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Current Shifts Display -->
+    <div class="current-display">
+      <h3>Current Shifts</h3>
+      {% for dept_name in available_departments %}
+        {% if dept_name in departments %}
+          <div class="dept-display">
+            <h4>{{ dept_name }}</h4>
+            {% if departments[dept_name].shifts %}
+              <div class="shifts-list">
+                {% for shift_name, shift_desc in departments[dept_name].shifts.items() %}
+                  <span class="shift-badge">{{ shift_name }}</span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="no-data">No shifts configured</p>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<style>
+  .settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+  }
+  
+  .settings-info {
+    flex: 1;
+  }
+  
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--text-secondary), #4b5563);
+    color: white;
+    text-decoration: none;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+  }
+  
+  .btn-back:hover {
+    background: linear-gradient(135deg, #4b5563, var(--text-secondary));
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    text-decoration: none;
+    color: white;
+  }
+  
+  .back-icon {
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+  
+  .settings-section {
+    background: var(--bg-secondary);
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    margin-bottom: 2rem;
+  }
+  
+  .settings-section h2 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+  }
+  
+  .section-note {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+  }
+  
+  .settings-form {
+    max-width: 100%;
+  }
+  
+  .management-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  @media (max-width: 1200px) {
+    .management-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .management-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .management-card {
+    background: var(--bg-tertiary);
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+  }
+  
+  .management-card h3 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+  }
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  
+  .form-select, .form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+  
+  .form-select:focus, .form-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.1);
+  }
+  
+  .current-dept {
+    background: var(--bg-tertiary);
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+  }
+  
+  .form-actions {
+    margin-top: 1rem;
+  }
+  
+  .btn-primary, .btn-success, .btn-danger, .btn-warning {
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  
+  .btn-primary {
+    background: var(--primary-color);
+    color: white;
+  }
+  
+  .btn-success {
+    background: #059669;
+    color: white;
+  }
+  
+  .btn-warning {
+    background: #d97706;
+    color: white;
+  }
+  
+  .btn-danger {
+    background: #dc2626;
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+  }
+  
+  .btn-success:hover {
+    background: #047857;
+    transform: translateY(-2px);
+  }
+  
+  .btn-warning:hover {
+    background: #b45309;
+    transform: translateY(-2px);
+  }
+  
+  .btn-danger:hover {
+    background: #b91c1c;
+    transform: translateY(-2px);
+  }
+  
+  @media (max-width: 768px) {
+    .settings-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .btn-back {
+      align-self: flex-start;
+    }
+  }
+</style>
+
+<script>
+  function goBack() {
+    // Check if there's a history to go back to
+    if (document.referrer && document.referrer !== window.location.href) {
+      // If we came from somewhere, go back
+      window.history.back();
+    } else {
+      // Otherwise, go to home
+      window.location.href = '{{ url_for("index") }}';
+    }
+  }
+</script>
+{% endblock %}

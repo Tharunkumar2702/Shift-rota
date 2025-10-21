@@ -1,0 +1,442 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card-header">
+    <div class="allowances-header">
+      <div class="header-info">
+        {% if allowance_type == 'night_shift' %}
+          <h1>🌙 Night Shift Allowances - {{ dept_name }}</h1>
+          <p class="note">{{ allowances_data.shift_type }} shifts for period {{ allowances_data.period_start }} to {{ allowances_data.period_end }}</p>
+          <div class="shift-info">
+            <strong>Shifts included:</strong> 
+            {% for shift in allowances_data.target_shifts %}
+              <span class="shift-tag {{ shift }}">{{ shift }}</span>
+            {% endfor %}
+          </div>
+        {% else %}
+          <h1>🏡 Weekend Allowances - {{ dept_name }}</h1>
+          <p class="note">Weekend work for period {{ allowances_data.period_start }} to {{ allowances_data.period_end }}</p>
+          <div class="weekend-info">
+            <strong>Calculation:</strong> Full weekend (Sat + Sun) = 1.0 allowance, Single day = 0.5 allowance
+          </div>
+        {% endif %}
+      </div>
+      <div class="header-actions">
+        {% if allowance_type == 'night_shift' %}
+          <a href="{{ url_for('night_shift_allowances', dept=dept_name, month=month, year=year, type='EST') }}" 
+             class="btn-shift-type {{ 'active' if allowances_data.shift_type == 'EST' else '' }}">EST Shifts</a>
+          <a href="{{ url_for('night_shift_allowances', dept=dept_name, month=month, year=year, type='PST') }}" 
+             class="btn-shift-type {{ 'active' if allowances_data.shift_type == 'PST' else '' }}">PST Shifts</a>
+        {% endif %}
+        <a href="{{ url_for('department', name=dept_name, month=month, year=year) }}" class="btn-back">← Back to Rota</a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="card-body">
+    {% if not allowances_data.employees %}
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <h3>No Allowances Found</h3>
+        <p class="note">No employees worked the qualifying shifts during this period.</p>
+      </div>
+    {% else %}
+      <div class="summary-stats">
+        <div class="stat-card">
+          <div class="stat-number">{{ allowances_data.employees|length }}</div>
+          <div class="stat-label">Employees Eligible</div>
+        </div>
+        {% if allowance_type == 'night_shift' %}
+          <div class="stat-card">
+            <div class="stat-number">{{ allowances_data.employees.values()|sum(attribute='total_days') }}</div>
+            <div class="stat-label">Total Shift Days</div>
+          </div>
+        {% else %}
+          <div class="stat-card">
+            <div class="stat-number">{{ "%.1f"|format(allowances_data.employees.values()|sum(attribute='total_allowances')) }}</div>
+            <div class="stat-label">Total Weekend Allowances</div>
+          </div>
+        {% endif %}
+      </div>
+      
+      <div class="allowances-table-wrap">
+        <table class="allowances-table">
+          <thead>
+            <tr>
+              <th class="employee-col">Employee</th>
+              {% if allowance_type == 'night_shift' %}
+                <th class="days-col">Total Days</th>
+                <th class="details-col">Shift Details</th>
+              {% else %}
+                <th class="allowances-col">Total Allowances</th>
+                <th class="details-col">Weekend Details</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for employee, data in allowances_data.employees.items() %}
+              <tr class="employee-row">
+                <td class="employee-name">{{ employee }}</td>
+                {% if allowance_type == 'night_shift' %}
+                  <td class="total-days">{{ data.total_days }}</td>
+                  <td class="shift-details">
+                    <div class="details-scroll">
+                      {% for shift_data in data.dates %}
+                        <div class="shift-entry">
+                          <span class="date">{{ shift_data.date }}</span>
+                          <span class="weekday">{{ shift_data.weekday }}</span>
+                          <span class="shift-badge {{ shift_data.shift }}">{{ shift_data.shift }}</span>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  </td>
+                {% else %}
+                  <td class="total-allowances">{{ "%.1f"|format(data.total_allowances) }}</td>
+                  <td class="weekend-details">
+                    <div class="details-scroll">
+                      {% for weekend in data.weekends %}
+                        <div class="weekend-entry">
+                          <div class="weekend-header">
+                            <span class="weekend-date">{{ weekend.weekend_start }}</span>
+                            <span class="allowance-badge">{{ "%.1f"|format(weekend.allowance) }} allowance</span>
+                          </div>
+                          <div class="weekend-days">
+                            {% if weekend.saturday %}
+                              <span class="day-worked">Sat: {{ weekend.saturday.shift }}</span>
+                            {% endif %}
+                            {% if weekend.sunday %}
+                              <span class="day-worked">Sun: {{ weekend.sunday.shift }}</span>
+                            {% endif %}
+                          </div>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="export-section">
+        <button onclick="exportToCSV()" class="btn-export">📄 Export to CSV</button>
+      </div>
+    {% endif %}
+  </div>
+  
+  <style>
+    .allowances-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    
+    .header-info {
+      flex: 1;
+    }
+    
+    .shift-info, .weekend-info {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    
+    .shift-tag {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-right: 0.5rem;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .btn-shift-type {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+    }
+    
+    .btn-shift-type.active {
+      background: var(--primary-color);
+      color: white;
+    }
+    
+    .btn-shift-type:hover {
+      background: var(--primary-dark);
+      color: white;
+      text-decoration: none;
+    }
+    
+    .btn-back {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-back:hover {
+      background: var(--bg-secondary);
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+    
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+      background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+      padding: 1.5rem;
+      border-radius: var(--radius-lg);
+      text-align: center;
+      border: 1px solid var(--border-color);
+    }
+    
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+      color: var(--text-secondary);
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 0.875rem;
+    }
+    
+    .allowances-table-wrap {
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+    
+    .allowances-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .allowances-table th {
+      background: linear-gradient(135deg, var(--bg-tertiary), var(--border-light));
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-primary);
+      border-bottom: 2px solid var(--border-color);
+    }
+    
+    .allowances-table td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-light);
+      vertical-align: top;
+    }
+    
+    .employee-row:nth-child(even) {
+      background-color: rgba(100, 116, 139, 0.02);
+    }
+    
+    .employee-name {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .total-days, .total-allowances {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--primary-color);
+      text-align: center;
+    }
+    
+    .details-scroll {
+      max-height: 200px;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+    
+    .shift-entry, .weekend-entry {
+      margin-bottom: 0.75rem;
+      padding: 0.5rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-sm);
+    }
+    
+    .shift-entry {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.875rem;
+    }
+    
+    .date {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .weekday {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+    
+    .shift-badge {
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .weekend-entry {
+      font-size: 0.875rem;
+    }
+    
+    .weekend-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.25rem;
+    }
+    
+    .weekend-date {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .allowance-badge {
+      background: var(--success-color);
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .weekend-days {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    
+    .day-worked {
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+    
+    .export-section {
+      margin-top: 2rem;
+      text-align: center;
+    }
+    
+    .btn-export {
+      background: linear-gradient(135deg, var(--success-color), #059669);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-export:hover {
+      background: linear-gradient(135deg, #059669, #047857);
+      transform: translateY(-2px);
+    }
+    
+    .employee-col { width: 250px; }
+    .days-col, .allowances-col { width: 120px; text-align: center; }
+    .details-col { width: auto; }
+    
+    @media (max-width: 768px) {
+      .allowances-header {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .summary-stats {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      .allowances-table-wrap {
+        overflow-x: auto;
+      }
+      
+      .details-scroll {
+        max-height: 150px;
+      }
+    }
+  </style>
+  
+  <script>
+    function exportToCSV() {
+      const table = document.querySelector('.allowances-table');
+      const rows = table.querySelectorAll('tr');
+      const csvData = [];
+      
+      // Add header
+      const headerRow = rows[0];
+      const headerData = Array.from(headerRow.querySelectorAll('th')).map(th => th.textContent.trim());
+      csvData.push(headerData);
+      
+      // Add data rows
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const rowData = [];
+        const cells = row.querySelectorAll('td');
+        
+        rowData.push(cells[0].textContent.trim()); // Employee name
+        rowData.push(cells[1].textContent.trim()); // Total days/allowances
+        
+        // For details column, extract text content
+        const detailsCell = cells[2];
+        const details = Array.from(detailsCell.querySelectorAll('.shift-entry, .weekend-entry'))
+          .map(entry => entry.textContent.trim().replace(/\s+/g, ' '))
+          .join('; ');
+        rowData.push(details);
+        
+        csvData.push(rowData);
+      }
+      
+      // Convert to CSV string
+      const csvString = csvData.map(row => 
+        row.map(field => `"${field.replace(/"/g, '""')}"`).join(',')
+      ).join('\n');
+      
+      // Download CSV
+      const blob = new Blob([csvString], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `{{ dept_name }}_{{ allowance_type }}_allowances_{{ month }}_{{ year }}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
+  </script>
+{% endblock %}

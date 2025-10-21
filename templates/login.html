@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card-header">
+    <h1>Department Login</h1>
+    <p class="note">Select your department and enter the corresponding password to access editing features.</p>
+  </div>
+  <div class="card-body">
+    {% if message %}
+      <div class="error-message">{{ message }}</div>
+    {% endif %}
+    
+    <form method="post" class="login-form">
+      <div class="form-group">
+        <label class="form-label">Department:</label>
+        <select name="department" class="form-select" required>
+          <option value="">Select your department...</option>
+          {% for dept in departments %}
+            <option value="{{ dept }}">{{ dept }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Password:</label>
+        <input type="password" name="password" class="form-input" required />
+      </div>
+      
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Login</button>
+        <a href="{{ url_for('index') }}" class="btn-secondary">Cancel</a>
+      </div>
+      
+      <div class="forgot-password-section">
+        <a href="{{ url_for('forgot_password') }}" class="forgot-link">🔓 Forgot Password?</a>
+      </div>
+    </form>
+    
+    <div class="admin-info">
+      <h3>Admin Access</h3>
+      <p>System administrators can use the global admin password instead of selecting a department.</p>
+    </div>
+  </div>
+  
+  <style>
+    .login-form {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .form-select, .form-input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      transition: border-color 0.2s ease;
+      background: var(--bg-primary);
+    }
+    
+    .form-select:focus, .form-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.1);
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2rem;
+    }
+    
+    .btn-primary {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+    
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      padding: 0.75rem 2rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+    
+    .btn-secondary:hover {
+      background: var(--bg-secondary);
+      transform: translateY(-2px);
+    }
+    
+    .error-message {
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    
+    .admin-info {
+      margin-top: 3rem;
+      padding: 1.5rem;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-lg);
+      text-align: center;
+    }
+    
+    .admin-info h3 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-primary);
+    }
+    
+    .admin-info p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+    
+    .forgot-password-section {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .forgot-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .forgot-link:hover {
+      color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+  </style>
+{% endblock %}
